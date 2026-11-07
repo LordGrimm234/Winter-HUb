@@ -104,6 +104,11 @@
   </div>
 
   <script>
+    // 1. PASTE SUPABASE CONFIG HERE:
+    const SUPABASE_URL = 'https://mevdpglvjbpxbmdqylmn.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ldmRwZ2x2amJweGJtZHF5bG1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQwNDYyNDQsImV4cCI6MjEwOTYyMjI0NH0.rGvGhxInn8ql1FM6yX5NMRLw3ozQqN5_GTAfkDeS3OQ';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
     function switchAuthTab(tab) {
       if (tab === 'login') {
         document.getElementById('auth-login-form').classList.remove('hidden');
