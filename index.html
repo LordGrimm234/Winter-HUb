@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GSIS Winter House | Information & Management Hub</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* Neo-Brutalist Core Theme */
+    :root {
+      --bg-main: #F8F9FA;
+      --navy: #0F172A;
+      --ice-blue: #A5F3FC;
+      --electric-lime: #CCFF00;
+      --electric-orange: #FF5722;
+      --sticky-yellow: #FEF08A;
+      --sticky-pink: #FBCFE8;
+      --sticky-mint: #A7F3D0;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: #000;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .neo-card {
+      border: 3px solid #000;
+      box-shadow: 4px 4px 0 #000;
+      background-color: #ffffff;
+    }
+
+    .neo-card-sm {
+      border: 2px solid #000;
+      box-shadow: 3px 3px 0 #000;
+      background-color: #ffffff;
+    }
+
+    .neo-btn {
+      border: 3px solid #000;
+      box-shadow: 4px 4px 0 #000;
+      font-weight: 700;
+      border-radius: 9999px;
+      transition: all 0.1s ease-in-out;
+    }
+
+    .neo-btn:active {
+      transform: translate(4px, 4px);
+      box-shadow: 0px 0px 0 #000;
+    }
+
+    .neo-input {
+      border: 3px solid #000;
+      box-shadow: 3px 3px 0 #000;
+      outline: none;
+    }
+
+    .neo-input:focus {
+      background-color: #F0F9FF;
+    }
+
+    /* Corkboard Stickies */
+    .sticky-yellow { background-color: var(--sticky-yellow); transform: rotate(-1.5deg); }
+    .sticky-pink { background-color: var(--sticky-pink); transform: rotate(1.2deg); }
+    .sticky-mint { background-color: var(--sticky-mint); transform: rotate(-0.8deg); }
+
+    /* Progress bar stripes */
+    .progress-striped {
+      background-image: linear-gradient(45deg, rgba(0, 0, 0, 0.15) 25%, transparent 25%, transparent 50%, rgba(0, 0, 0, 0.15) 50%, rgba(0, 0, 0, 0.15) 75%, transparent 75%, transparent);
+      background-size: 1rem 1rem;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col pb-12">
+
+  <!-- DEMO ROLE SWITCHER BAR (For School President Presentation) -->
+  <div class="bg-black text-white px-4 py-2 flex flex-wrap justify-between items-center text-xs sm:text-sm font-mono border-b-4 border-black">
+    <div class="flex items-center gap-2">
+      <span class="bg-yellow-400 text-black px-2 py-0.5 rounded font-bold">PRESENTER MODE</span>
+      <span>Active Role: <strong id="current-role-display" class="text-cyan-400 uppercase">Admin (House Master)</strong></span>
+    </div>
+    <div class="flex items-center gap-2 mt-1 sm:mt-0">
+      <span>Switch View:</span>
+      <button onclick="switchRole('admin')" class="px-2 py-0.5 bg-red-600 hover:bg-red-700 text-white rounded font-bold">Admin</button>
+      <button onclick="switchRole('prefect')" class="px-2 py-0.5 bg-blue-600 hover:bg-blue-700 text-white rounded font-bold">Prefect</button>
+      <button onclick="switchRole('student')" class="px-2 py-0.5 bg-green-600 hover:bg-green-700 text-white rounded font-bold">Student</button>
+      <a href="login.html" class="ml-2 px-2 py-0.5 bg-gray-700 hover:bg-gray-600 text-white rounded underline">Logout</a>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <header class="max-w-7xl mx-auto w-full px-4 pt-6">
+    <div class="neo-card p-4 sm:p-6 bg-slate-900 text-white flex flex-col md:flex-row justify-between items-center gap-4">
+      <div>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-cyan-400 text-black border-2 border-black flex items-center justify-center font-black text-xl rounded-full">W</div>
+          <div>
+            <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white uppercase">GSIS Winter House</h1>
+            <p class="text-xs font-bold text-cyan-300 tracking-wider">TRUTH • TRUST • TRIUMPH</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-3">
+        <span class="bg-orange-600 text-white border-2 border-black px-3 py-1 text-sm font-black tracking-widest rounded-full uppercase">
+          WINTER IS COMING
+        </span>
+        <div class="flex items-center gap-2 neo-card-sm px-3 py-1 bg-slate-800 text-white">
+          <span class="w-3 h-3 rounded-full bg-green-500 border border-black"></span>
+          <span id="user-display-name" class="font-bold text-sm">User: Master.R</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN NAVIGATION TABS -->
+    <nav class="flex flex-wrap gap-2 mt-6">
+      <button onclick="switchTab('home')" id="tab-home" class="neo-btn px-6 py-2 bg-cyan-300 text-black">🏠 Home Page</button>
+      <button onclick="switchTab('competitions')" id="tab-competitions" class="neo-btn px-6 py-2 bg-white text-black">🏆 Competition Roster</button>
+      <button onclick="switchTab('announcements')" id="tab-announcements" class="neo-btn px-6 py-2 bg-white text-black">📌 Announcements</button>
+      <button onclick="switchTab('chat')" id="tab-chat" class="neo-btn px-6 py-2 bg-white text-black">💬 Winter House Chat</button>
+    </nav>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto w-full px-4 mt-6 flex-1">
+
+    <!-- ==================== TAB 1: HOME PAGE ==================== -->
+    <section id="page-home" class="space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left 2 Columns: Weather + Live Quiz API + Links -->
+        <div class="lg:col-span-2 space-y-6">
+          
+          <!-- Weather API Widget (Open-Meteo for Ooty/Nilgiris) -->
+          <div class="neo-card p-6 bg-slate-900 text-white">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <span class="bg-cyan-400 text-black px-2 py-0.5 font-bold text-xs border border-black uppercase">Live Weather API</span>
+                <h2 class="text-xl font-black mt-1">Nilgiris / Ooty Station Weather</h2>
+              </div>
+              <button onclick="fetchOotyWeather()" class="text-xs bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-black px-2 py-1 rounded font-bold">Refresh API</button>
+            </div>
+            
+            <div id="weather-container" class="grid grid-cols-3 gap-4 text-center">
+              <div class="neo-card-sm p-3 bg-slate-800">
+                <span class="text-xs text-slate-400 block font-bold">TEMPERATURE</span>
+                <span id="weather-temp" class="text-2xl font-black text-cyan-300">-- °C</span>
+              </div>
+              <div class="neo-card-sm p-3 bg-slate-800">
+                <span class="text-xs text-slate-400 block font-bold">WIND SPEED</span>
+                <span id="weather-wind" class="text-2xl font-black text-lime-400">-- km/h</span>
+              </div>
+              <div class="neo-card-sm p-3 bg-slate-800">
+                <span class="text-xs text-slate-400 block font-bold">CONDITIONS</span>
+                <span id="weather-cond" class="text-sm font-bold text-orange-400 mt-1 block">Loading API...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- World Flags & GK Quiz API Widget -->
+          <div class="neo-card p-6 bg-amber-100">
+            <div class="flex justify-between items-center mb-4">
+              <div>
+                <span class="bg-black text-yellow-300 px-2 py-0.5 text-[10px] font-bold uppercase rounded">LIVE TRIVIA API</span>
+                <h2 class="text-xl font-black uppercase tracking-tight mt-0.5">🧠 World Flags & Geography Challenge</h2>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="fetchQuizFromAPI()" class="text-xs bg-white text-black border border-black px-2 py-1 font-bold rounded hover:bg-yellow-200">New Questions 🔄</button>
+                <span id="quiz-score" class="bg-black text-lime-400 px-3 py-1 font-bold rounded-full text-xs">Score: 0</span>
+              </div>
+            </div>
+
+            <div id="quiz-box" class="neo-card-sm p-4 bg-white">
+              <p id="quiz-question" class="font-bold text-base mb-4 text-slate-900">Fetching live API question...</p>
+              <div id="quiz-options" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+              <p id="quiz-feedback" class="font-bold text-sm mt-3 hidden"></p>
+              <button id="quiz-next-btn" onclick="nextQuizQuestion()" class="neo-btn px-4 py-1.5 bg-black text-white text-xs mt-4 hidden">Next Question ➔</button>
+            </div>
+          </div>
+
+          <!-- Quick Resources & Links -->
+          <div class="neo-card p-6 bg-cyan-50">
+            <h2 class="text-xl font-black mb-4 uppercase">🔗 Winter House Official Links</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <a href="https://youtube.com" target="_blank" class="neo-card-sm p-4 bg-red-500 text-white hover:bg-red-600 flex items-center justify-between">
+                <div>
+                  <span class="font-black text-lg block">GSIS YouTube</span>
+                  <span class="text-xs text-red-100">Official Channel & Highlights</span>
+                </div>
+                <span class="text-2xl">▶</span>
+              </a>
+              <a href="#" target="_blank" class="neo-card-sm p-4 bg-blue-600 text-white hover:bg-blue-700 flex items-center justify-between">
+                <div>
+                  <span class="font-black text-lg block">Winter House Folder</span>
+                  <span class="text-xs text-blue-100">Shared Drive & Docs</span>
+                </div>
+                <span class="text-2xl">📁</span>
+              </a>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right 1 Column: Practice Attendance & Location Tracker -->
+        <div class="space-y-6">
+          <div class="neo-card p-6 bg-white border-l-8 border-l-lime-400">
+            <div class="flex justify-between items-start mb-3">
+              <h2 class="text-xl font-black uppercase">📍 Practice Attendance</h2>
+              <span id="tracker-status-badge" class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded border border-black">INACTIVE</span>
+            </div>
+
+            <!-- Prefect/Admin Control Panel -->
+            <div id="prefect-attendance-controls" class="neo-card-sm p-3 bg-yellow-100 mb-4 space-y-3">
+              <span class="text-xs font-black bg-black text-yellow-300 px-2 py-0.5 rounded">PREFECT / ADMIN CONTROL</span>
+              <div>
+                <label class="block text-xs font-bold mb-1">Select Event Practice:</label>
+                <select id="practice-event-select" class="w-full neo-input p-1.5 text-xs font-bold bg-white">
+                  <option value="Inter-House Football Practice">Inter-House Football Practice</option>
+                  <option value="Winter Debate Prep">Winter Debate Prep</option>
+                  <option value="Chess Championship Practice">Chess Championship Practice</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold mb-1">Router / Venue Label:</label>
+                <input id="practice-location-label" type="text" value="GSIS-SPORTS-AP04 (Main Field)" class="w-full neo-input p-1.5 text-xs font-bold bg-white">
+              </div>
+              <button onclick="togglePracticeSession()" id="toggle-practice-btn" class="w-full neo-btn py-1.5 bg-black text-lime-400 text-xs uppercase">
+                Activate Attendance Session
+              </button>
+            </div>
+
+            <!-- Student View -->
+            <div id="student-attendance-view" class="space-y-4">
+              <div id="practice-inactive-msg" class="p-4 bg-gray-100 border-2 border-dashed border-gray-400 text-center">
+                <p class="text-xs font-bold text-gray-600">No practice attendance session active currently.</p>
+                <p class="text-[10px] text-gray-500 mt-1">Prefects will activate this during scheduled practice sessions.</p>
+              </div>
+
+              <div id="practice-active-box" class="hidden space-y-3 neo-card-sm p-4 bg-lime-50">
+                <div>
+                  <span class="text-xs text-slate-500 font-bold block">ACTIVE PRACTICE:</span>
+                  <strong id="active-practice-name" class="text-sm font-black text-black">Inter-House Football Practice</strong>
+                </div>
+                <div>
+                  <span class="text-xs text-slate-500 font-bold block">VERIFIED ROUTER LOCATION:</span>
+                  <span id="active-practice-loc" class="text-xs font-bold text-blue-700">GSIS-SPORTS-AP04 (Main Field)</span>
+                </div>
+                <button onclick="markStudentAttendance()" id="mark-attendance-btn" class="w-full neo-btn py-2 bg-lime-400 text-black font-black text-sm uppercase">
+                  Mark My Attendance Now
+                </button>
+              </div>
+
+              <div id="attendance-confirmed-msg" class="hidden neo-card-sm p-3 bg-green-200 text-green-900 text-center font-bold text-xs">
+                ✓ Attendance Verified & Recorded!
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ==================== TAB 2: COMPETITION ROSTER ==================== -->
+    <section id="page-competitions" class="hidden space-y-6">
+      
+      <!-- Top Action Bar -->
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 neo-card p-4 bg-cyan-100">
+        <div>
+          <h2 class="text-2xl font-black uppercase">Competition Roster</h2>
+          <p class="text-xs font-bold text-slate-700">Select any competition widget below to view details and register directly.</p>
+        </div>
+        <button id="admin-create-comp-btn" onclick="openCreateCompModal()" class="neo-btn px-4 py-2 bg-black text-lime-400 text-xs font-bold uppercase hidden">
+          + Create Competition (Admin/Prefect)
+        </button>
+      </div>
+
+      <!-- 3-4 Column Competition Widgets Grid -->
+      <div id="competitions-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+        <!-- Rendered dynamically via JS -->
+      </div>
+
+      <!-- Master Roster View (Admin & Prefect Only) -->
+      <div id="master-roster-section" class="neo-card p-6 bg-white hidden space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b-2 border-black pb-4">
+          <div>
+            <span class="bg-black text-yellow-300 px-2 py-0.5 text-xs font-bold rounded">PREFECT & ADMIN TOOLS</span>
+            <h3 class="text-xl font-black mt-1 uppercase">Master Registration Roster</h3>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <select id="roster-filter-block" onchange="renderMasterRoster()" class="neo-input px-3 py-1 text-xs font-bold bg-white">
+              <option value="ALL">All Blocks</option>
+              <option value="Block A">Block A</option>
+              <option value="Block B">Block B</option>
+              <option value="Block C">Block C</option>
+            </select>
+            <button onclick="copyRosterToClipboard()" class="neo-btn px-3 py-1 bg-yellow-300 text-black text-xs">Copy Names</button>
+            <button onclick="exportRosterCSV()" class="neo-btn px-3 py-1 bg-lime-400 text-black text-xs">Export CSV</button>
+          </div>
+        </div>
+
+        <div id="roster-widgets-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- ==================== TAB 3: ANNOUNCEMENTS (CORKBOARD) ==================== -->
+    <section id="page-announcements" class="hidden space-y-6">
+      <div class="neo-card p-6 bg-amber-50">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b-2 border-black pb-4">
+          <div>
+            <h2 class="text-2xl font-black uppercase">📌 Winter House Corkboard</h2>
+            <p class="text-xs font-bold text-slate-700">Official house notices and updates.</p>
+          </div>
+          <button id="admin-pin-memo-btn" onclick="openPinMemoModal()" class="neo-btn px-4 py-2 bg-black text-yellow-300 text-xs font-bold uppercase hidden">
+            + Pin New Memo (Admin/Prefect)
+          </button>
+        </div>
+
+        <div id="corkboard-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 py-4">
+          <!-- Rendered stickies via JS -->
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ==================== TAB 4: WINTER HOUSE CHAT ==================== -->
+    <section id="page-chat" class="hidden">
+      <div class="neo-card bg-slate-900 text-white overflow-hidden grid grid-cols-1 md:grid-cols-3 min-h-[550px]">
+        
+        <!-- Left Sidebar: Main Broadcast + Student Created Chats + Staff Tracker -->
+        <div class="border-b-4 md:border-b-0 md:border-r-4 border-black p-4 bg-slate-800 flex flex-col justify-between space-y-4">
+          <div class="space-y-4">
+            
+            <!-- Default Pre-Created Main Channel -->
+            <div>
+              <span class="text-[10px] font-black uppercase text-slate-400 block mb-2">OFFICIAL HOUSE CHANNEL</span>
+              <button onclick="selectChannel('main-announcements')" id="chan-main-announcements" class="w-full neo-card-sm p-3 text-left font-bold text-xs bg-cyan-300 text-black flex justify-between items-center">
+                <span>🔒 #main-announcements</span>
+                <span class="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded">Prefects Only</span>
+              </button>
+            </div>
+
+            <!-- Student Created Custom Chats -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-[10px] font-black uppercase text-slate-400">STUDENT CREATED CHATS</span>
+                <button onclick="promptCreateChannel()" class="neo-btn px-2 py-0.5 bg-lime-400 text-black text-[10px] font-bold">+ Create Chat</button>
+              </div>
+              <div id="user-channels-list" class="space-y-2">
+                <!-- User created channels render here -->
+              </div>
+            </div>
+
+            <!-- Staff Monitored Section (Visible only to Prefects & Admin) -->
+            <div id="staff-chat-tracker" class="hidden border-t-2 border-yellow-400/40 pt-3">
+              <div class="flex items-center gap-1.5 mb-2">
+                <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
+                <span class="text-[10px] font-black uppercase text-yellow-300 tracking-wider">👁️ MONITORED STUDENT CHATS (ADMIN/PREFECT)</span>
+              </div>
+              <div id="monitored-channels-list" class="space-y-1 text-xs">
+                <!-- Audit list rendered here -->
+              </div>
+            </div>
+
+          </div>
+
+          <div class="pt-3 border-t border-slate-700">
+            <span class="text-[10px] font-bold text-slate-400 block mb-1">WhatsApp Style Interface</span>
+            <p class="text-[10px] text-slate-400">Only #main-announcements is pre-created. All other chats are created by students & tracked by House Master / Prefects.</p>
+          </div>
+        </div>
+
+        <!-- Right Pane: Message Feed -->
+        <div class="md:col-span-2 flex flex-col justify-between bg-slate-950">
+          
+          <!-- Chat Header -->
+          <div class="p-4 bg-slate-800 border-b-2 border-black flex justify-between items-center">
+            <div>
+              <strong id="active-chat-title" class="font-black text-cyan-300 text-base">#main-announcements</strong>
+              <span id="active-chat-desc" class="text-xs text-slate-400 block">Official broadcasts from House Master & Prefects</span>
+            </div>
+            <span id="chat-permission-badge" class="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded border border-black">READ ONLY FOR STUDENTS</span>
+          </div>
+
+          <!-- Message Feed -->
+          <div id="chat-messages-container" class="p-4 space-y-3 overflow-y-auto max-h-[380px] bg-[#0b141a]">
+            <!-- Rendered via JS -->
+          </div>
+
+          <!-- Input Box -->
+          <div class="p-3 bg-slate-800 border-t-2 border-black">
+            <div id="chat-locked-warning" class="hidden text-xs text-red-400 font-bold text-center py-2 bg-red-950 border border-red-800 rounded">
+              🔒 Main Chat is read-only for Students. Only Prefects & Admin can post.
+            </div>
+            <form id="chat-send-form" onsubmit="handleSendChatMessage(event)" class="flex gap-2">
+              <input id="chat-input-text" type="text" placeholder="Type a message..." class="flex-1 neo-input px-3 py-2 text-sm bg-slate-900 text-white">
+              <button type="submit" class="neo-btn px-4 py-2 bg-lime-400 text-black font-bold text-xs">Send ➔</button>
+            </form>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- Registration Modal -->
+  <div id="modal-register" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 hidden z-50">
+    <div class="neo-card p-6 bg-white max-w-md w-full space-y-4">
+      <div class="flex justify-between items-center border-b-2 border-black pb-2">
+        <h3 class="font-black text-lg uppercase" id="reg-modal-title">Competition Registration</h3>
+        <button onclick="closeModal('modal-register')" class="font-bold text-xl">✕</button>
+      </div>
+
+      <form onsubmit="submitRegistration(event)" class="space-y-3">
+        <input type="hidden" id="reg-comp-id">
+        <div>
+          <label class="block text-xs font-bold mb-1">Roll Number:</label>
+          <input id="reg-roll" type="text" required placeholder="e.g. W-204" class="w-full neo-input p-2 text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">Full Name:</label>
+          <input id="reg-name" type="text" required placeholder="e.g. Alex Sharma" class="w-full neo-input p-2 text-xs">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-bold mb-1">Grade:</label>
+            <input id="reg-grade" type="text" required placeholder="e.g. Grade 11" class="w-full neo-input p-2 text-xs">
+          </div>
+          <div>
+            <label class="block text-xs font-bold mb-1">Class & Section:</label>
+            <input id="reg-class" type="text" required placeholder="e.g. 11-B IB" class="w-full neo-input p-2 text-xs">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-bold mb-1">Dorm Block & Room:</label>
+            <input id="reg-dorm" type="text" required placeholder="e.g. Block A / Rm 12" class="w-full neo-input p-2 text-xs">
+          </div>
+          <div>
+            <label class="block text-xs font-bold mb-1">Age / DOB:</label>
+            <input id="reg-dob" type="text" required placeholder="e.g. 16 (04/05/2010)" class="w-full neo-input p-2 text-xs">
+          </div>
+        </div>
+        <button type="submit" class="w-full neo-btn py-2 bg-lime-400 text-black font-black uppercase text-xs">Confirm Registration</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Competition Modal -->
+  <div id="modal-create-comp" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 hidden z-50">
+    <div class="neo-card p-6 bg-white max-w-md w-full space-y-4">
+      <div class="flex justify-between items-center border-b-2 border-black pb-2">
+        <h3 class="font-black text-lg uppercase">Create New Competition</h3>
+        <button onclick="closeModal('modal-create-comp')" class="font-bold text-xl">✕</button>
+      </div>
+
+      <form onsubmit="submitCreateCompetition(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold mb-1">Competition Title:</label>
+          <input id="new-comp-title" type="text" required placeholder="e.g. Inter-House Football" class="w-full neo-input p-2 text-xs">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-bold mb-1">Category:</label>
+            <select id="new-comp-cat" class="w-full neo-input p-2 text-xs">
+              <option value="Sports">Sports</option>
+              <option value="Academic">Academic</option>
+              <option value="Cultural">Cultural</option>
+              <option value="Debate">Debate</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold mb-1">Capacity Limit:</label>
+            <input id="new-comp-cap" type="number" value="15" required class="w-full neo-input p-2 text-xs">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">Venue:</label>
+          <input id="new-comp-venue" type="text" required placeholder="e.g. Main Sports Complex" class="w-full neo-input p-2 text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">Registration Deadline:</label>
+          <input id="new-comp-date" type="text" required placeholder="e.g. Nov 15, 2026" class="w-full neo-input p-2 text-xs">
+        </div>
+        <button type="submit" class="w-full neo-btn py-2 bg-black text-lime-400 font-black uppercase text-xs">Publish Competition</button>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    // Global State
+    let currentUserRole = 'admin'; // 'admin', 'prefect', 'student'
+    let activePracticeActive = false;
+    let currentChannel = 'main-announcements';
+
+    // Quiz API State
+    let apiQuizQuestions = [];
+    let currentQuizIndex = 0;
+    let quizScore = 0;
+
+    // Competitions Data
+    let competitions = [
+      { id: 1, title: 'Inter-House Football Championship', category: 'Sports', venue: 'Main Turf Pitch', date: 'Nov 12, 2026', capacity: 18, enrolled: 14 },
+      { id: 2, title: 'Annual Winter Debate Cup', category: 'Debate', venue: 'Auditorium Hall B', date: 'Nov 15, 2026', capacity: 10, enrolled: 8 },
+      { id: 3, title: 'Winter House Chess Tournament', category: 'Academic', venue: 'Common Room', date: 'Nov 18, 2026', capacity: 12, enrolled: 12 },
+      { id: 4, title: 'Cultural Music & Talent Night', category: 'Cultural', venue: 'Open Amphitheatre', date: 'Nov 20, 2026', capacity: 25, enrolled: 19 }
+    ];
+
+    // Registrations Data
+    let registrations = [
+      { id: 101, compId: 1, roll: 'W-104', name: 'Rohan Verma', grade: 'Grade 11', class: '11-A IB', dorm: 'Block A / Rm 04', dob: '16 (12/03/2010)', checkedIn: true },
+      { id: 102, compId: 1, roll: 'W-208', name: 'Karan Patel', grade: 'Grade 12', class: '12-B ISC', dorm: 'Block B / Rm 12', dob: '17 (05/08/2009)', checkedIn: false },
+      { id: 103, compId: 2, roll: 'W-301', name: 'Siddharth Rao', grade: 'Grade 10', class: '10-C ICSE', dorm: 'Block C / Rm 02', dob: '15 (22/11/2011)', checkedIn: true }
+    ];
+
+    // Chat State: Only #main-announcements pre-created
+    let chatMessages = {
+      'main-announcements': [
+        { sender: 'House Master (Admin)', text: 'Welcome to Winter House! Football practice begins at 16:30 hrs today.', time: '08:30 AM', isOfficial: true },
+        { sender: 'Prefect-01', text: 'Please ensure all competition sign-ups are completed before Friday.', time: '09:15 AM', isOfficial: true }
+      ]
+    };
+
+    // Track user-created chat rooms (Monitored by Admin & Prefects)
+    let userCreatedChannels = [];
+
+    // App Initialization
+    window.onload = () => {
+      fetchOotyWeather();
+      fetchQuizFromAPI();
+      renderCompetitions();
+      renderAnnouncements();
+      renderChatSidebar();
+      renderChatMessages();
+      updateRoleUI();
+    };
+
+    // Role Switcher
+    function switchRole(role) {
+      currentUserRole = role;
+      document.getElementById('current-role-display').innerText = role;
+      document.getElementById('user-display-name').innerText = `User: ${role.toUpperCase()}`;
+      updateRoleUI();
+    }
+
+    function updateRoleUI() {
+      const isStaff = (currentUserRole === 'admin' || currentUserRole === 'prefect');
+      
+      // Control buttons visibility
+      document.getElementById('prefect-attendance-controls').style.display = isStaff ? 'block' : 'none';
+      document.getElementById('admin-create-comp-btn').style.display = isStaff ? 'inline-block' : 'none';
+      document.getElementById('master-roster-section').style.display = isStaff ? 'block' : 'none';
+      document.getElementById('admin-pin-memo-btn').style.display = isStaff ? 'inline-block' : 'none';
+      document.getElementById('staff-chat-tracker').style.display = isStaff ? 'block' : 'none';
+
+      // Chat input permissions for main announcements
+      if (currentChannel === 'main-announcements') {
+        document.getElementById('chat-locked-warning').style.display = isStaff ? 'none' : 'block';
+        document.getElementById('chat-send-form').style.display = isStaff ? 'flex' : 'none';
+      } else {
+        document.getElementById('chat-locked-warning').style.display = 'none';
+        document.getElementById('chat-send-form').style.display = 'flex';
+      }
+      
+      renderCompetitions();
+      renderMasterRoster();
+      renderChatSidebar();
+    }
+
+    // Tab Navigation
+    function switchTab(tabName) {
+      ['home', 'competitions', 'announcements', 'chat'].forEach(t => {
+        document.getElementById(`page-${t}`).classList.add('hidden');
+        document.getElementById(`tab-${t}`).classList.remove('bg-cyan-300');
+        document.getElementById(`tab-${t}`).classList.add('bg-white');
+      });
+      document.getElementById(`page-${tabName}`).classList.remove('hidden');
+      document.getElementById(`tab-${tabName}`).classList.add('bg-cyan-300');
+      document.getElementById(`tab-${tabName}`).classList.remove('bg-white');
+    }
+
+    // ================= Weather API =================
+    async function fetchOotyWeather() {
+      try {
+        const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=11.41&longitude=76.69&current_weather=true');
+        const data = await res.json();
+        if (data && data.current_weather) {
+          const temp = data.current_weather.temperature;
+          const wind = data.current_weather.windspeed;
+          const code = data.current_weather.weathercode;
+          
+          document.getElementById('weather-temp').innerText = `${temp} °C`;
+          document.getElementById('weather-wind').innerText = `${wind} km/h`;
+          
+          let desc = "Clear Mountain Sky";
+          if (code >= 1 && code <= 3) desc = "Partly Cloudy";
+          else if (code >= 45 && code <= 48) desc = "Dense Mountain Fog";
+          else if (code >= 51 && code <= 67) desc = "Light Rain / Drizzle";
+          else if (code >= 80) desc = "Showers & Wind";
+          
+          document.getElementById('weather-cond').innerText = desc;
+        }
+      } catch (err) {
+        document.getElementById('weather-temp').innerText = '14.2 °C';
+        document.getElementById('weather-wind').innerText = '11 km/h';
+        document.getElementById('weather-cond').innerText = 'Cool Nilgiris Breeze';
+      }
+    }
+
+    // ================= Trivia / Flags Quiz API =================
+    function decodeHTMLEntities(text) {
+      const textarea = document.createElement('textarea');
+      textarea.innerHTML = text;
+      return textarea.value;
+    }
+
+    async function fetchQuizFromAPI() {
+      const qBox = document.getElementById('quiz-question');
+      qBox.innerText = "Fetching live question from Geography & Flags API...";
+      
+      try {
+        // OpenTDB Category 22 = Geography / World Flags / Trivia
+        const res = await fetch('https://opentdb.com/api.php?amount=5&category=22&type=multiple');
+        const data = await res.json();
+
+        if (data.results && data.results.length > 0) {
+          apiQuizQuestions = data.results.map(item => {
+            const incorrect = item.incorrect_answers.map(decodeHTMLEntities);
+            const correct = decodeHTMLEntities(item.correct_answer);
+            const options = [...incorrect];
+            const randIdx = Math.floor(Math.random() * (options.length + 1));
+            options.splice(randIdx, 0, correct);
+            return {
+              question: decodeHTMLEntities(item.question),
+              options: options,
+              answer: randIdx
+            };
+          });
+          currentQuizIndex = 0;
+          displayCurrentQuizQuestion();
+        } else {
+          throw new Error("API Limit reached");
+        }
+      } catch (err) {
+        // Fallback questions if API rate-limited
+        apiQuizQuestions = [
+          { question: "Which country's flag features a red maple leaf?", options: ["Canada", "Lebanon", "Australia", "New Zealand"], answer: 0 },
+          { question: "What is the capital city of Australia?", options: ["Sydney", "Melbourne", "Canberra", "Brisbane"], answer: 2 },
+          { question: "Which country has a non-rectangular national flag?", options: ["Nepal", "Switzerland", "Vatican City", "Monaco"], answer: 0 },
+          { question: "Which mountain range separates Europe from Asia?", options: ["Alps", "Ural Mountains", "Andes", "Himalayas"], answer: 1 }
+        ];
+        currentQuizIndex = 0;
+        displayCurrentQuizQuestion();
+      }
+    }
+
+    function displayCurrentQuizQuestion() {
+      if (!apiQuizQuestions || apiQuizQuestions.length === 0) return;
+      const q = apiQuizQuestions[currentQuizIndex];
+      document.getElementById('quiz-question').innerText = `Q${currentQuizIndex + 1}: ${q.question}`;
+      const optsContainer = document.getElementById('quiz-options');
+      optsContainer.innerHTML = '';
+      document.getElementById('quiz-feedback').classList.add('hidden');
+      document.getElementById('quiz-next-btn').classList.add('hidden');
+
+      q.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'neo-btn p-2 text-xs text-left bg-white text-black hover:bg-yellow-200';
+        btn.innerText = opt;
+        btn.onclick = () => checkQuizAnswer(idx);
+        optsContainer.appendChild(btn);
+      });
+    }
+
+    function checkQuizAnswer(selectedIdx) {
+      const q = apiQuizQuestions[currentQuizIndex];
+      const feedback = document.getElementById('quiz-feedback');
+      feedback.classList.remove('hidden');
+
+      if (selectedIdx === q.answer) {
+        quizScore += 10;
+        feedback.className = 'font-bold text-sm mt-3 text-green-700';
+        feedback.innerText = '✓ Correct Answer! (+10 House Points)';
+      } else {
+        feedback.className = 'font-bold text-sm mt-3 text-red-600';
+        feedback.innerText = `✕ Incorrect! Correct answer was: ${q.options[q.answer]}`;
+      }
+      document.getElementById('quiz-score').innerText = `Score: ${quizScore}`;
+      document.getElementById('quiz-next-btn').classList.remove('hidden');
+    }
+
+    function nextQuizQuestion() {
+      currentQuizIndex++;
+      if (currentQuizIndex >= apiQuizQuestions.length) {
+        fetchQuizFromAPI(); // Fetch next batch of live questions
+      } else {
+        displayCurrentQuizQuestion();
+      }
+    }
+
+    // Practice Attendance Geofence Toggle
+    function togglePracticeSession() {
+      activePracticeActive = !activePracticeActive;
+      const statusBadge = document.getElementById('tracker-status-badge');
+      const inactiveMsg = document.getElementById('practice-inactive-msg');
+      const activeBox = document.getElementById('practice-active-box');
+      const toggleBtn = document.getElementById('toggle-practice-btn');
+
+      if (activePracticeActive) {
+        statusBadge.innerText = 'SESSION ACTIVE';
+        statusBadge.className = 'bg-lime-400 text-black text-xs font-bold px-2 py-0.5 rounded border border-black';
+        inactiveMsg.classList.add('hidden');
+        activeBox.classList.remove('hidden');
+        toggleBtn.innerText = 'Deactivate Session';
+        document.getElementById('active-practice-name').innerText = document.getElementById('practice-event-select').value;
+        document.getElementById('active-practice-loc').innerText = document.getElementById('practice-location-label').value;
+      } else {
+        statusBadge.innerText = 'INACTIVE';
+        statusBadge.className = 'bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded border border-black';
+        inactiveMsg.classList.remove('hidden');
+        activeBox.classList.add('hidden');
+        toggleBtn.innerText = 'Activate Attendance Session';
+        document.getElementById('attendance-confirmed-msg').classList.add('hidden');
+      }
+    }
+
+    function markStudentAttendance() {
+      document.getElementById('mark-attendance-btn').classList.add('hidden');
+      document.getElementById('attendance-confirmed-msg').classList.remove('hidden');
+    }
+
+    // Render 3-4 Column Competition Widgets
+    function renderCompetitions() {
+      const container = document.getElementById('competitions-grid');
+      container.innerHTML = '';
+
+      competitions.forEach(c => {
+        const pct = Math.round((c.enrolled / c.capacity) * 100);
+        const card = document.createElement('div');
+        card.className = 'neo-card p-5 bg-white flex flex-col justify-between space-y-4';
+        
+        card.innerHTML = `
+          <div>
+            <div class="flex justify-between items-start mb-2">
+              <span class="bg-cyan-300 text-black text-[10px] font-black px-2 py-0.5 border border-black uppercase">${c.category}</span>
+              <span class="text-xs font-bold text-slate-500">${c.date}</span>
+            </div>
+            <h3 class="font-black text-base text-black leading-tight">${c.title}</h3>
+            <p class="text-xs text-slate-600 font-bold mt-1">📍 ${c.venue}</p>
+          </div>
+
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs font-bold">
+              <span>Capacity:</span>
+              <span>${c.enrolled} / ${c.capacity} Registered</span>
+            </div>
+            <div class="w-full bg-gray-200 border-2 border-black h-4 rounded-full overflow-hidden">
+              <div class="bg-lime-400 h-full progress-striped" style="width: ${pct}%"></div>
+            </div>
+            <button onclick="openRegisterModal(${c.id}, '${c.title}')" class="w-full neo-btn py-2 bg-black text-white hover:bg-slate-800 text-xs font-black uppercase mt-2">
+              Register Now
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Render Master Roster Cards
+    function renderMasterRoster() {
+      const container = document.getElementById('roster-widgets-container');
+      const filter = document.getElementById('roster-filter-block').value;
+      container.innerHTML = '';
+
+      let list = registrations;
+      if (filter !== 'ALL') {
+        list = list.filter(r => r.dorm.includes(filter));
+      }
+
+      list.forEach(r => {
+        const widget = document.createElement('div');
+        widget.className = 'neo-card-sm p-4 bg-yellow-50 space-y-2';
+        widget.innerHTML = `
+          <div class="flex justify-between items-start">
+            <strong class="font-black text-sm">${r.name}</strong>
+            <span class="bg-black text-white text-[10px] font-bold px-1.5 py-0.5 rounded">${r.roll}</span>
+          </div>
+          <p class="text-xs text-slate-700"><strong>Class:</strong> ${r.class} (${r.grade})</p>
+          <p class="text-xs text-slate-700"><strong>Dorm:</strong> ${r.dorm}</p>
+          <p class="text-xs text-slate-700"><strong>Age/DOB:</strong> ${r.dob}</p>
+          <div class="flex justify-between items-center pt-2 border-t border-gray-300">
+            <label class="text-xs font-bold flex items-center gap-1">
+              <input type="checkbox" ${r.checkedIn ? 'checked' : ''} onchange="toggleCheckIn(${r.id})" class="w-4 h-4"> Attended
+            </label>
+            ${currentUserRole === 'admin' ? `<button onclick="deleteRegistration(${r.id})" class="text-red-600 font-bold text-xs">Delete</button>` : ''}
+          </div>
+        `;
+        container.appendChild(widget);
+      });
+    }
+
+    function toggleCheckIn(id) {
+      const item = registrations.find(r => r.id === id);
+      if (item) item.checkedIn = !item.checkedIn;
+    }
+
+    function deleteRegistration(id) {
+      registrations = registrations.filter(r => r.id !== id);
+      renderMasterRoster();
+    }
+
+    // Modal Control
+    function openRegisterModal(id, title) {
+      document.getElementById('reg-comp-id').value = id;
+      document.getElementById('reg-modal-title').innerText = `Register: ${title}`;
+      document.getElementById('modal-register').classList.remove('hidden');
+    }
+
+    function openCreateCompModal() {
+      document.getElementById('modal-create-comp').classList.remove('hidden');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.add('hidden');
+    }
+
+    function submitRegistration(e) {
+      e.preventDefault();
+      const compId = parseInt(document.getElementById('reg-comp-id').value);
+      const newEntry = {
+        id: Date.now(),
+        compId,
+        roll: document.getElementById('reg-roll').value,
+        name: document.getElementById('reg-name').value,
+        grade: document.getElementById('reg-grade').value,
+        class: document.getElementById('reg-class').value,
+        dorm: document.getElementById('reg-dorm').value,
+        dob: document.getElementById('reg-dob').value,
+        checkedIn: false
+      };
+      registrations.push(newEntry);
+      
+      const comp = competitions.find(c => c.id === compId);
+      if (comp) comp.enrolled += 1;
+
+      closeModal('modal-register');
+      renderCompetitions();
+      renderMasterRoster();
+      alert('Registration Successful!');
+    }
+
+    function submitCreateCompetition(e) {
+      e.preventDefault();
+      const newComp = {
+        id: Date.now(),
+        title: document.getElementById('new-comp-title').value,
+        category: document.getElementById('new-comp-cat').value,
+        venue: document.getElementById('new-comp-venue').value,
+        date: document.getElementById('new-comp-date').value,
+        capacity: parseInt(document.getElementById('new-comp-cap').value),
+        enrolled: 0
+      };
+      competitions.push(newComp);
+      closeModal('modal-create-comp');
+      renderCompetitions();
+    }
+
+    // Clipboard & CSV Export
+    function copyRosterToClipboard() {
+      const text = registrations.map(r => `${r.roll} - ${r.name} (${r.dorm})`).join('\n');
+      navigator.clipboard.writeText(text);
+      alert('Roster names copied to clipboard!');
+    }
+
+    function exportRosterCSV() {
+      let csv = "Roll,Name,Grade,Class,Dorm,DOB,Attended\n";
+      registrations.forEach(r => {
+        csv += `"${r.roll}","${r.name}","${r.grade}","${r.class}","${r.dorm}","${r.dob}","${r.checkedIn}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'Winter_House_Roster.csv';
+      a.click();
+    }
+
+    // Render Corkboard Stickies
+    function renderAnnouncements() {
+      const container = document.getElementById('corkboard-grid');
+      const memos = [
+        { title: 'Winter Prep Schedule', text: 'Evening prep in the house lounge will run from 18:30 to 20:00 starting Monday.', style: 'sticky-yellow', author: 'House Master' },
+        { title: 'Inter-House Sports Kit', text: 'Collect your blue house jerseys from Prefect Alex in Block A Room 04.', style: 'sticky-pink', author: 'Prefect-01' },
+        { title: 'Weekend Outing Passes', text: 'All weekend leave applications must be submitted by Thursday 17:00 hrs.', style: 'sticky-mint', author: 'Admin' }
+      ];
+
+      container.innerHTML = memos.map(m => `
+        <div class="neo-card p-5 ${m.style} space-y-2">
+          <span class="text-[10px] font-black uppercase bg-black text-white px-2 py-0.5 rounded">${m.author}</span>
+          <h3 class="font-black text-lg leading-snug">${m.title}</h3>
+          <p class="text-xs font-bold text-slate-800">${m.text}</p>
+        </div>
+      `).join('');
+    }
+
+    // ================= CHAT SYSTEM (Only 1 Pre-created + User Created + Staff Tracking) =================
+
+    function promptCreateChannel() {
+      const name = prompt('Enter name for your custom group chat or 1-on-1 username:');
+      if (name && name.trim()) {
+        const key = name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+        if (!chatMessages[key]) {
+          chatMessages[key] = [];
+          userCreatedChannels.push({
+            key: key,
+            title: name.trim(),
+            createdBy: currentUserRole.toUpperCase()
+          });
+        }
+        selectChannel(key);
+      }
+    }
+
+    function selectChannel(chanKey) {
+      currentChannel = chanKey;
+      const isStaff = (currentUserRole === 'admin' || currentUserRole === 'prefect');
+      
+      const titleDisplay = chanKey === 'main-announcements' ? '#main-announcements' : `💬 #${chanKey}`;
+      document.getElementById('active-chat-title').innerText = titleDisplay;
+      
+      const isMain = (chanKey === 'main-announcements');
+      document.getElementById('active-chat-desc').innerText = isMain 
+        ? 'Official broadcasts from House Master & Prefects'
+        : 'Student Created Chat (Tracked by Admin & Prefects)';
+
+      document.getElementById('chat-permission-badge').style.display = (isMain && !isStaff) ? 'inline-block' : 'none';
+      document.getElementById('chat-locked-warning').style.display = (isMain && !isStaff) ? 'block' : 'none';
+      document.getElementById('chat-send-form').style.display = (isMain && !isStaff) ? 'none' : 'flex';
+
+      renderChatSidebar();
+      renderChatMessages();
+    }
+
+    function renderChatSidebar() {
+      const userList = document.getElementById('user-channels-list');
+      userList.innerHTML = '';
+
+      if (userCreatedChannels.length === 0) {
+        userList.innerHTML = '<p class="text-[10px] text-slate-400 font-bold italic">No custom chats created yet. Click "+ Create Chat" above.</p>';
+      } else {
+        userCreatedChannels.forEach(ch => {
+          const btn = document.createElement('button');
+          btn.onclick = () => selectChannel(ch.key);
+          const isActive = (currentChannel === ch.key);
+          btn.className = `w-full neo-card-sm p-2.5 text-left font-bold text-xs ${isActive ? 'bg-lime-400 text-black' : 'bg-slate-700 text-white hover:bg-slate-600'} flex justify-between items-center`;
+          btn.innerHTML = `<span>💬 #${ch.key}</span><span class="text-[9px] text-slate-300">by ${ch.createdBy}</span>`;
+          userList.appendChild(btn);
+        });
+      }
+
+      // Render Admin/Prefect Monitored List
+      const monitoredList = document.getElementById('monitored-channels-list');
+      monitoredList.innerHTML = '';
+      if (userCreatedChannels.length === 0) {
+        monitoredList.innerHTML = '<p class="text-[10px] text-yellow-200/60 italic">No active student chat groups to monitor.</p>';
+      } else {
+        userCreatedChannels.forEach(ch => {
+          const div = document.createElement('div');
+          div.className = 'flex justify-between items-center p-1.5 bg-slate-900 rounded border border-slate-700 text-[10px]';
+          div.innerHTML = `
+            <span class="text-cyan-300 font-bold">#${ch.key}</span>
+            <button onclick="selectChannel('${ch.key}')" class="text-lime-400 font-bold underline hover:text-lime-300">Inspect Chat ➔</button>
+          `;
+          monitoredList.appendChild(div);
+        });
+      }
+    }
+
+    function renderChatMessages() {
+      const container = document.getElementById('chat-messages-container');
+      const msgs = chatMessages[currentChannel] || [];
+      
+      if (msgs.length === 0) {
+        container.innerHTML = '<div class="text-center text-xs text-slate-500 font-bold py-8">No messages in this channel yet. Start the conversation!</div>';
+        return;
+      }
+
+      container.innerHTML = msgs.map(m => `
+        <div class="flex flex-col ${m.isOfficial ? 'items-start' : 'items-end'}">
+          <div class="neo-card-sm p-3 max-w-xs sm:max-w-md ${m.isOfficial ? 'bg-cyan-100 text-black' : 'bg-[#DCF8C6] text-black'}">
+            <span class="text-[10px] font-black block text-slate-600 mb-1">${m.sender}</span>
+            <p class="text-xs font-bold">${m.text}</p>
+            <span class="text-[9px] font-bold text-slate-500 block text-right mt-1">${m.time} ✓✓</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function handleSendChatMessage(e) {
+      e.preventDefault();
+      const input = document.getElementById('chat-input-text');
+      if (!input.value.trim()) return;
+
+      if (!chatMessages[currentChannel]) chatMessages[currentChannel] = [];
+      
+      chatMessages[currentChannel].push({
+        sender: currentUserRole.toUpperCase(),
+        text: input.value.trim(),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isOfficial: (currentUserRole !== 'student')
+      });
+      
+      input.value = '';
+      renderChatMessages();
+    }
+  </script>
+</body>
+</html>
