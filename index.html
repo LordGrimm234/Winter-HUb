@@ -644,6 +644,7 @@
       renderAnnouncements();
       renderChatSidebar();
       renderChatMessages();
+      subscribeToRealtimeChat();
       updateRoleUI();
     };
 
@@ -967,7 +968,6 @@
         container.appendChild(card);
       });
 
-      // Update Filter Select inside Master Roster Header
       const filterSelect = document.getElementById('roster-filter-comp');
       if (filterSelect) {
         filterSelect.innerHTML = `<option value="ALL">All Competitions</option>` + 
@@ -1075,7 +1075,7 @@
             h1 { font-size: 24px; text-transform: uppercase; margin: 0; }
             .meta { font-size: 12px; font-weight: bold; color: #444; margin-top: 4px; }
             .comp-section { border: 2px solid #000; margin-bottom: 25px; page-break-inside: avoid; }
-            .comp-title { bg-color: #f0f0f0; background: #eee; padding: 10px; font-size: 14px; font-weight: bold; border-bottom: 2px solid #000; display: flex; justify-content: space-between; }
+            .comp-title { background: #eee; padding: 10px; font-size: 14px; font-weight: bold; border-bottom: 2px solid #000; display: flex; justify-between; }
             table { width: 100%; border-collapse: collapse; }
             th, td { border: 1px solid #000; padding: 8px 10px; text-align: left; font-size: 11px; }
             th { background-color: #e2e8f0; font-weight: bold; text-transform: uppercase; }
@@ -1370,22 +1370,66 @@
       `).join('');
     }
 
-    function handleSendChatMessage(e) {
+    // REAL-TIME CHAT IMPLEMENTATION (SUPABASE + LOCAL FALLBACK)
+    async function handleSendChatMessage(e) {
       e.preventDefault();
       const input = document.getElementById('chat-input-text');
-      if (!input.value.trim()) return;
+      const text = input.value.trim();
+      if (!text) return;
 
-      if (!chatMessages[currentChannel]) chatMessages[currentChannel] = [];
-      
-      chatMessages[currentChannel].push({
-        sender: currentUserRole.toUpperCase(),
-        text: input.value.trim(),
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isOfficial: (currentUserRole !== 'student')
-      });
-      
+      if (supabaseClient) {
+        const { error } = await supabaseClient
+          .from('chat_messages')
+          .insert({
+            channel_key: currentChannel,
+            sender_name: currentUserEmail.split('@')[0],
+            message_text: text,
+            is_official: (currentUserRole !== 'student')
+          });
+          
+        if (error) alert('Error sending message: ' + error.message);
+      } else {
+        if (!chatMessages[currentChannel]) chatMessages[currentChannel] = [];
+        chatMessages[currentChannel].push({
+          sender: currentUserEmail.split('@')[0],
+          text: text,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isOfficial: (currentUserRole !== 'student')
+        });
+        renderChatMessages();
+      }
+
       input.value = '';
-      renderChatMessages();
+    }
+
+    function subscribeToRealtimeChat() {
+      if (!supabaseClient) return;
+
+      supabaseClient
+        .channel('public:chat_messages')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'chat_messages' },
+          (payload) => {
+            const newMessage = payload.new;
+            
+            if (!chatMessages[newMessage.channel_key]) {
+              chatMessages[newMessage.channel_key] = [];
+            }
+
+            chatMessages[newMessage.channel_key].push({
+              sender: newMessage.sender_name,
+              text: newMessage.message_text,
+              time: new Date(newMessage.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              isOfficial: newMessage.is_official
+            });
+
+            if (currentChannel === newMessage.channel_key) {
+              renderChatMessages();
+            }
+          }
+        )
+        .subscribe();
     }
   </script>
 </body>
