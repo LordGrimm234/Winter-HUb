@@ -93,20 +93,13 @@
       </div>
       <button type="submit" class="w-full neo-btn py-2.5 bg-black text-lime-400 font-black uppercase text-xs">Create Account ➔</button>
     </form>
-
-    <div class="text-center pt-2 border-t border-gray-200">
-      <a href="index.html" class="text-xs font-bold text-blue-600 underline">Enter Dashboard Directly</a>
-    </div>
   </div>
 
   <script>
-    // ========================================================
-    // SUPABASE CONFIGURATION
-    // ========================================================
+    // Supabase Credentials Block
     const SUPABASE_URL = 'https://mevdpglvjbpxbmdqylmn.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ldmRwZ2x2amJweGJtZHF5bG1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQwNDYyNDQsImV4cCI6MjEwOTYyMjI0NH0.rGvGhxInn8ql1FM6yX5NMRLw3ozQqN5_GTAfkDeS3OQ';
 
-    // Initialize Supabase Client
     let supabaseClient = null;
     if (typeof supabase !== 'undefined' && SUPABASE_URL !== 'https://YOUR-PROJECT-ID.supabase.co') {
       supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -136,7 +129,6 @@
         return;
       }
 
-      // If live Supabase credentials are configured:
       if (supabaseClient) {
         const { data, error } = await supabaseClient.auth.signInWithPassword({
           email: email,
@@ -148,7 +140,6 @@
           return;
         }
 
-        // Fetch user profile role from Supabase table
         const { data: profile } = await supabaseClient
           .from('profiles')
           .select('role')
@@ -159,7 +150,6 @@
         localStorage.setItem('userRole', role);
         localStorage.setItem('userEmail', email);
       } else {
-        // Fallback for immediate preview/testing
         let role = 'student';
         if (email.includes('admin') || email.includes('master')) role = 'admin';
         else if (email.includes('prefect')) role = 'prefect';
@@ -186,7 +176,6 @@
         return;
       }
 
-      // If live Supabase credentials are configured:
       if (supabaseClient) {
         const { data, error } = await supabaseClient.auth.signUp({
           email: email,
