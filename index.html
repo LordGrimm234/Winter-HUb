@@ -73,7 +73,7 @@
     }
   </style>
 
-  <!-- MANDATORY AUTH GUARD: REDIRECT IF NOT LOGGED IN -->
+  <!-- AUTH GUARD: REDIRECT IF NOT LOGGED IN -->
   <script>
     (function checkAuthGuard() {
       const activeUser = localStorage.getItem('userEmail');
@@ -104,7 +104,7 @@
           WINTER IS COMING
         </span>
         
-        <!-- Authenticated User Profile & Fixed Role Badge -->
+        <!-- Authenticated User Profile -->
         <div class="neo-card-sm px-3.5 py-1.5 bg-slate-800 text-white flex items-center gap-3">
           <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full bg-green-500 border border-black"></span>
@@ -137,7 +137,7 @@
         <!-- Left 2 Columns: Weather + Live Quiz API + Links -->
         <div class="lg:col-span-2 space-y-6">
           
-          <!-- Weather API Widget (Open-Meteo for Ooty/Nilgiris) -->
+          <!-- Weather API Widget -->
           <div class="neo-card p-6 bg-slate-900 text-white">
             <div class="flex justify-between items-start mb-4">
               <div>
@@ -207,30 +207,43 @@
 
         </div>
 
-        <!-- Right 1 Column: Practice Attendance & Location Tracker -->
+        <!-- Right 1 Column: Practice Attendance & Location Tracker Widget -->
         <div class="space-y-6">
-          <div class="neo-card p-6 bg-white border-l-8 border-l-lime-400">
-            <div class="flex justify-between items-start mb-3">
+          <div class="neo-card p-6 bg-white border-l-8 border-l-lime-400 space-y-4">
+            <div class="flex justify-between items-start">
               <h2 class="text-xl font-black uppercase">📍 Practice Attendance</h2>
               <span id="tracker-status-badge" class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded border border-black">INACTIVE</span>
             </div>
 
             <!-- Prefect/Admin Control Panel -->
-            <div id="prefect-attendance-controls" class="neo-card-sm p-3 bg-yellow-100 mb-4 space-y-3">
-              <span class="text-xs font-black bg-black text-yellow-300 px-2 py-0.5 rounded">PREFECT / ADMIN CONTROL</span>
+            <div id="prefect-attendance-controls" class="neo-card-sm p-4 bg-yellow-100 space-y-3">
+              <div class="flex justify-between items-center">
+                <span class="text-[10px] font-black bg-black text-yellow-300 px-2 py-0.5 rounded uppercase">PREFECT / ADMIN CONTROL</span>
+                <button type="button" onclick="openManageEventsModal()" class="text-[11px] font-black underline text-blue-800 hover:text-black">+ Add / Edit Events</button>
+              </div>
+
+              <!-- Network Location Detection & Labeling -->
+              <div class="p-2.5 bg-white neo-card-sm space-y-2">
+                <div class="flex justify-between items-center">
+                  <label class="block text-xs font-black">1. Router Location Connection:</label>
+                  <button type="button" onclick="detectNetworkLocation()" class="neo-btn px-2 py-0.5 bg-cyan-300 text-black text-[10px] uppercase">📶 Detect Network</button>
+                </div>
+                <div class="flex gap-2">
+                  <input id="practice-location-label" type="text" value="GSIS-SPORTS-AP04 (Main Field)" placeholder="Router / Venue Label..." class="flex-1 neo-input p-1.5 text-xs font-bold bg-white">
+                  <button type="button" onclick="saveLocationLabel()" class="neo-btn px-2 py-1 bg-lime-400 text-black text-[10px] uppercase">Save Label</button>
+                </div>
+                <span id="location-saved-msg" class="text-[10px] font-bold text-green-700 hidden block">✓ Location saved to venue registry!</span>
+              </div>
+
+              <!-- Practice Event Selector -->
               <div>
-                <label class="block text-xs font-bold mb-1">Select Event Practice:</label>
-                <select id="practice-event-select" class="w-full neo-input p-1.5 text-xs font-bold bg-white">
-                  <option value="Inter-House Football Practice">Inter-House Football Practice</option>
-                  <option value="Winter Debate Prep">Winter Debate Prep</option>
-                  <option value="Chess Championship Practice">Chess Championship Practice</option>
+                <label class="block text-xs font-black mb-1">2. Select Event Practice:</label>
+                <select id="practice-event-select" onchange="onPracticeEventChange()" class="w-full neo-input p-2 text-xs font-bold bg-white">
+                  <!-- Rendered dynamically -->
                 </select>
               </div>
-              <div>
-                <label class="block text-xs font-bold mb-1">Router / Venue Label:</label>
-                <input id="practice-location-label" type="text" value="GSIS-SPORTS-AP04 (Main Field)" class="w-full neo-input p-1.5 text-xs font-bold bg-white">
-              </div>
-              <button onclick="togglePracticeSession()" id="toggle-practice-btn" class="w-full neo-btn py-1.5 bg-black text-lime-400 text-xs uppercase">
+
+              <button onclick="togglePracticeSession()" id="toggle-practice-btn" class="w-full neo-btn py-2 bg-black text-lime-400 text-xs font-black uppercase">
                 Activate Attendance Session
               </button>
             </div>
@@ -270,8 +283,6 @@
 
     <!-- ==================== TAB 2: COMPETITION ROSTER ==================== -->
     <section id="page-competitions" class="hidden space-y-6">
-      
-      <!-- Top Action Bar -->
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 neo-card p-4 bg-cyan-100">
         <div>
           <h2 class="text-2xl font-black uppercase">Competition Roster</h2>
@@ -284,27 +295,32 @@
 
       <!-- 4 Column Competition Widgets Grid -->
       <div id="competitions-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-        <!-- Rendered dynamically via JS -->
+        <!-- Rendered dynamically -->
       </div>
 
-      <!-- Master Roster View (Admin & Prefect Only) -->
-      <div id="master-roster-section" class="neo-card p-6 bg-white hidden space-y-4">
+      <!-- Master Roster View Grouped By Competition (Admin & Prefect Only) -->
+      <div id="master-roster-section" class="neo-card p-6 bg-white hidden space-y-6">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b-2 border-black pb-4">
           <div>
             <span class="bg-black text-yellow-300 px-2 py-0.5 text-xs font-bold rounded">PREFECT & ADMIN TOOLS</span>
-            <h3 class="text-xl font-black mt-1 uppercase">Master Registration Roster</h3>
+            <h3 class="text-xl font-black mt-1 uppercase">Master Roster (Grouped By Competition)</h3>
           </div>
-          <div class="flex flex-wrap gap-2">
-            <button onclick="copyRosterToClipboard()" class="neo-btn px-3 py-1 bg-yellow-300 text-black text-xs">Copy Names</button>
-            <button onclick="exportRosterCSV()" class="neo-btn px-3 py-1 bg-lime-400 text-black text-xs">Export CSV</button>
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="roster-filter-comp" onchange="renderMasterRoster()" class="neo-input px-3 py-1.5 text-xs font-bold bg-white">
+              <option value="ALL">All Competitions</option>
+              <!-- Dynamic options -->
+            </select>
+            <button onclick="exportRosterPDF()" class="neo-btn px-3.5 py-1.5 bg-red-500 text-white text-xs font-bold">📄 Export PDF</button>
+            <button onclick="copyRosterToClipboard()" class="neo-btn px-3 py-1.5 bg-yellow-300 text-black text-xs">Copy Names</button>
+            <button onclick="exportRosterCSV()" class="neo-btn px-3 py-1.5 bg-lime-400 text-black text-xs">Export CSV</button>
           </div>
         </div>
 
-        <div id="roster-widgets-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Rendered Competition Sections -->
+        <div id="roster-widgets-container" class="space-y-6">
           <!-- Rendered via JS -->
         </div>
       </div>
-
     </section>
 
 
@@ -322,7 +338,7 @@
         </div>
 
         <div id="corkboard-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 py-4">
-          <!-- Rendered stickies via JS -->
+          <!-- Rendered stickies -->
         </div>
       </div>
     </section>
@@ -332,11 +348,8 @@
     <section id="page-chat" class="hidden">
       <div class="neo-card bg-slate-900 text-white overflow-hidden grid grid-cols-1 md:grid-cols-3 min-h-[550px]">
         
-        <!-- Left Sidebar -->
         <div class="border-b-4 md:border-b-0 md:border-r-4 border-black p-4 bg-slate-800 flex flex-col justify-between space-y-4">
           <div class="space-y-4">
-            
-            <!-- Default Channel -->
             <div>
               <span class="text-[10px] font-black uppercase text-slate-400 block mb-2">OFFICIAL HOUSE CHANNEL</span>
               <button onclick="selectChannel('main-announcements')" id="chan-main-announcements" class="w-full neo-card-sm p-3 text-left font-bold text-xs bg-cyan-300 text-black flex justify-between items-center">
@@ -345,7 +358,6 @@
               </button>
             </div>
 
-            <!-- Student Created Custom Chats -->
             <div>
               <div class="flex justify-between items-center mb-2">
                 <span class="text-[10px] font-black uppercase text-slate-400">STUDENT CREATED CHATS</span>
@@ -356,7 +368,6 @@
               </div>
             </div>
 
-            <!-- Staff Monitored Section -->
             <div id="staff-chat-tracker" class="hidden border-t-2 border-yellow-400/40 pt-3">
               <div class="flex items-center gap-1.5 mb-2">
                 <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
@@ -366,14 +377,10 @@
                 <!-- Audit list rendered here -->
               </div>
             </div>
-
           </div>
         </div>
 
-        <!-- Right Pane: Message Feed -->
         <div class="md:col-span-2 flex flex-col justify-between bg-slate-950">
-          
-          <!-- Chat Header -->
           <div class="p-4 bg-slate-800 border-b-2 border-black flex justify-between items-center">
             <div>
               <strong id="active-chat-title" class="font-black text-cyan-300 text-base">#main-announcements</strong>
@@ -382,12 +389,10 @@
             <span id="chat-permission-badge" class="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded border border-black">READ ONLY FOR STUDENTS</span>
           </div>
 
-          <!-- Message Feed -->
           <div id="chat-messages-container" class="p-4 space-y-3 overflow-y-auto max-h-[380px] bg-[#0b141a]">
             <!-- Rendered via JS -->
           </div>
 
-          <!-- Input Box -->
           <div class="p-3 bg-slate-800 border-t-2 border-black">
             <div id="chat-locked-warning" class="hidden text-xs text-red-400 font-bold text-center py-2 bg-red-950 border border-red-800 rounded">
               🔒 Main Chat is read-only for Students. Only Prefects & Admin can post.
@@ -397,7 +402,6 @@
               <button type="submit" class="neo-btn px-4 py-2 bg-lime-400 text-black font-bold text-xs">Send ➔</button>
             </form>
           </div>
-
         </div>
 
       </div>
@@ -407,6 +411,37 @@
 
 
   <!-- ==================== MODALS ==================== -->
+
+  <!-- Add / Edit Practice Events Modal -->
+  <div id="modal-manage-events" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 hidden z-50">
+    <div class="neo-card p-6 bg-white max-w-md w-full space-y-4">
+      <div class="flex justify-between items-center border-b-2 border-black pb-2">
+        <h3 class="font-black text-lg uppercase">Add / Edit Practice Events</h3>
+        <button onclick="closeModal('modal-manage-events')" class="font-bold text-xl">✕</button>
+      </div>
+
+      <form onsubmit="submitAddPracticeEvent(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold mb-1">Event Name:</label>
+          <input id="new-event-name" type="text" required placeholder="e.g. Basketball Practice" class="w-full neo-input p-2 text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">Assign Venue / Router Location:</label>
+          <select id="new-event-venue" class="w-full neo-input p-2 text-xs font-bold bg-white">
+            <!-- Populated from saved locations -->
+          </select>
+        </div>
+        <button type="submit" class="w-full neo-btn py-2 bg-black text-lime-400 font-black uppercase text-xs">+ Add Practice Event</button>
+      </form>
+
+      <div class="border-t-2 border-gray-200 pt-3">
+        <h4 class="font-black text-xs uppercase mb-2">Existing Practice Events:</h4>
+        <div id="manage-events-list" class="space-y-1.5 max-h-40 overflow-y-auto">
+          <!-- List rendered via JS -->
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Registration Modal -->
   <div id="modal-register" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 hidden z-50">
@@ -539,12 +574,26 @@
       supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
 
-    // Authenticated State from local session
+    // Authenticated User State
     const currentUserEmail = localStorage.getItem('userEmail') || 'user@gsis.ac.in';
     const currentUserRole = localStorage.getItem('userRole') || 'student';
 
     let activePracticeActive = false;
     let currentChannel = 'main-announcements';
+
+    // Saved Router/Venue Registry & Practice Events State
+    let savedVenues = [
+      "GSIS-SPORTS-AP04 (Main Field)",
+      "GSIS-AUD-AP02 (Auditorium)",
+      "GSIS-GYM-AP01 (Indoor Gym)",
+      "GSIS-LIBRARY-AP03 (Prep Lounge)"
+    ];
+
+    let practiceEvents = [
+      { id: 1, name: "Inter-House Football Practice", venue: "GSIS-SPORTS-AP04 (Main Field)" },
+      { id: 2, name: "Winter Debate Prep", venue: "GSIS-AUD-AP02 (Auditorium)" },
+      { id: 3, name: "Chess Championship Practice", venue: "GSIS-LIBRARY-AP03 (Prep Lounge)" }
+    ];
 
     // Quiz API State
     let apiQuizQuestions = [];
@@ -559,11 +608,12 @@
       { id: 4, title: 'Cultural Music & Talent Night', category: 'Cultural', venue: 'Open Amphitheatre', date: 'Nov 20, 2026', capacity: 25, enrolled: 19 }
     ];
 
-    // Registrations Data
+    // Registrations Data Linked by compId
     let registrations = [
       { id: 101, compId: 1, roll: 'W-104', name: 'Rohan Verma', grade: 'Grade 11', class: '11-A IB', dorm: 'Room 104', dob: '16 (12/03/2010)', checkedIn: true },
       { id: 102, compId: 1, roll: 'W-208', name: 'Karan Patel', grade: 'Grade 12', class: '12-B ISC', dorm: 'Room 208', dob: '17 (05/08/2009)', checkedIn: false },
-      { id: 103, compId: 2, roll: 'W-301', name: 'Siddharth Rao', grade: 'Grade 10', class: '10-C ICSE', dorm: 'Room 301', dob: '15 (22/11/2011)', checkedIn: true }
+      { id: 103, compId: 2, roll: 'W-301', name: 'Siddharth Rao', grade: 'Grade 10', class: '10-C ICSE', dorm: 'Room 301', dob: '15 (22/11/2011)', checkedIn: true },
+      { id: 104, compId: 4, roll: 'W-112', name: 'Ananya Roy', grade: 'Grade 11', class: '11-C IB', dorm: 'Room 112', dob: '16 (09/01/2010)', checkedIn: true }
     ];
 
     // Announcements Data
@@ -589,6 +639,7 @@
       
       fetchOotyWeather();
       fetchQuizFromAPI();
+      renderPracticeEventsDropdown();
       renderCompetitions();
       renderAnnouncements();
       renderChatSidebar();
@@ -745,7 +796,99 @@
       }
     }
 
-    // Practice Attendance Toggle
+    // ================= PRACTICE ATTENDANCE & VENUE MANAGER =================
+
+    function renderPracticeEventsDropdown() {
+      const select = document.getElementById('practice-event-select');
+      if (!select) return;
+      select.innerHTML = practiceEvents.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+      onPracticeEventChange();
+    }
+
+    function onPracticeEventChange() {
+      const select = document.getElementById('practice-event-select');
+      const selectedId = parseInt(select.value);
+      const ev = practiceEvents.find(e => e.id === selectedId);
+      if (ev) {
+        document.getElementById('practice-location-label').value = ev.venue;
+      }
+    }
+
+    function detectNetworkLocation() {
+      const apList = [
+        "GSIS-SPORTS-AP04 (Main Field)",
+        "GSIS-COURT-AP02 (Basketball Pitch)",
+        "GSIS-MAIN-AP01 (House Common Room)",
+        "GSIS-TRACK-AP05 (Athletics Complex)"
+      ];
+      const detected = apList[Math.floor(Math.random() * apList.length)];
+      document.getElementById('practice-location-label').value = detected;
+      alert(`📶 Network Connection Detected!\nConnected Router Access Point: ${detected}`);
+    }
+
+    function saveLocationLabel() {
+      const val = document.getElementById('practice-location-label').value.trim();
+      if (!val) return;
+      if (!savedVenues.includes(val)) {
+        savedVenues.push(val);
+      }
+      const msg = document.getElementById('location-saved-msg');
+      msg.classList.remove('hidden');
+      setTimeout(() => msg.classList.add('hidden'), 3000);
+    }
+
+    function openManageEventsModal() {
+      renderSavedVenuesInModal();
+      renderManageEventsList();
+      document.getElementById('modal-manage-events').classList.remove('hidden');
+    }
+
+    function renderSavedVenuesInModal() {
+      const select = document.getElementById('new-event-venue');
+      select.innerHTML = savedVenues.map(v => `<option value="${v}">${v}</option>`).join('');
+    }
+
+    function renderManageEventsList() {
+      const container = document.getElementById('manage-events-list');
+      if (practiceEvents.length === 0) {
+        container.innerHTML = '<p class="text-xs text-gray-500 font-bold">No practice events added yet.</p>';
+        return;
+      }
+      container.innerHTML = practiceEvents.map(e => `
+        <div class="flex justify-between items-center p-2 bg-gray-100 rounded border border-black text-xs">
+          <div>
+            <strong class="block font-black">${e.name}</strong>
+            <span class="text-[10px] text-gray-700 font-bold">📍 ${e.venue}</span>
+          </div>
+          <button onclick="deletePracticeEvent(${e.id})" class="text-red-600 font-bold hover:underline text-xs">Delete</button>
+        </div>
+      `).join('');
+    }
+
+    function submitAddPracticeEvent(e) {
+      e.preventDefault();
+      const name = document.getElementById('new-event-name').value.trim();
+      const venue = document.getElementById('new-event-venue').value;
+      if (!name) return;
+      
+      practiceEvents.push({
+        id: Date.now(),
+        name,
+        venue
+      });
+      
+      document.getElementById('new-event-name').value = '';
+      renderManageEventsList();
+      renderPracticeEventsDropdown();
+      alert('New practice event created!');
+    }
+
+    function deletePracticeEvent(id) {
+      practiceEvents = practiceEvents.filter(e => e.id !== id);
+      renderManageEventsList();
+      renderPracticeEventsDropdown();
+    }
+
     function togglePracticeSession() {
       activePracticeActive = !activePracticeActive;
       const statusBadge = document.getElementById('tracker-status-badge');
@@ -754,12 +897,17 @@
       const toggleBtn = document.getElementById('toggle-practice-btn');
 
       if (activePracticeActive) {
+        const select = document.getElementById('practice-event-select');
+        const selectedId = parseInt(select.value);
+        const ev = practiceEvents.find(e => e.id === selectedId);
+
         statusBadge.innerText = 'SESSION ACTIVE';
         statusBadge.className = 'bg-lime-400 text-black text-xs font-bold px-2 py-0.5 rounded border border-black';
         inactiveMsg.classList.add('hidden');
         activeBox.classList.remove('hidden');
         toggleBtn.innerText = 'Deactivate Session';
-        document.getElementById('active-practice-name').innerText = document.getElementById('practice-event-select').value;
+        
+        document.getElementById('active-practice-name').innerText = ev ? ev.name : 'Scheduled Practice';
         document.getElementById('active-practice-loc').innerText = document.getElementById('practice-location-label').value;
       } else {
         statusBadge.innerText = 'INACTIVE';
@@ -768,6 +916,7 @@
         activeBox.classList.add('hidden');
         toggleBtn.innerText = 'Activate Attendance Session';
         document.getElementById('attendance-confirmed-msg').classList.add('hidden');
+        document.getElementById('mark-attendance-btn').classList.remove('hidden');
       }
     }
 
@@ -817,39 +966,80 @@
         `;
         container.appendChild(card);
       });
+
+      // Update Filter Select inside Master Roster Header
+      const filterSelect = document.getElementById('roster-filter-comp');
+      if (filterSelect) {
+        filterSelect.innerHTML = `<option value="ALL">All Competitions</option>` + 
+          competitions.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+      }
     }
 
     function deleteCompetition(id) {
       if (confirm('Are you sure you want to delete this competition?')) {
         competitions = competitions.filter(c => c.id !== id);
+        registrations = registrations.filter(r => r.compId !== id);
         renderCompetitions();
+        renderMasterRoster();
       }
     }
 
-    // Render Master Roster Cards
+    // ================= MASTER ROSTER GROUPED BY COMPETITION =================
     function renderMasterRoster() {
       const container = document.getElementById('roster-widgets-container');
+      if (!container) return;
       container.innerHTML = '';
 
-      registrations.forEach(r => {
-        const widget = document.createElement('div');
-        widget.className = 'neo-card-sm p-4 bg-yellow-50 space-y-2';
-        widget.innerHTML = `
-          <div class="flex justify-between items-start">
-            <strong class="font-black text-sm">${r.name}</strong>
-            <span class="bg-black text-white text-[10px] font-bold px-1.5 py-0.5 rounded">${r.roll}</span>
+      const filterCompVal = document.getElementById('roster-filter-comp')?.value || 'ALL';
+      const isStaff = (currentUserRole === 'admin' || currentUserRole === 'prefect');
+
+      competitions.forEach(comp => {
+        if (filterCompVal !== 'ALL' && comp.id != filterCompVal) return;
+
+        const compRegs = registrations.filter(r => r.compId === comp.id);
+        
+        const section = document.createElement('div');
+        section.className = 'neo-card p-5 bg-yellow-50 space-y-4';
+
+        let boardersHtml = '';
+        if (compRegs.length === 0) {
+          boardersHtml = '<p class="text-xs font-bold text-gray-500 italic p-3 bg-white neo-card-sm">No boarders currently registered for this event.</p>';
+        } else {
+          boardersHtml = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">` + 
+            compRegs.map(r => `
+              <div class="neo-card-sm p-3 bg-white space-y-2">
+                <div class="flex justify-between items-start">
+                  <strong class="font-black text-sm text-black">${r.name}</strong>
+                  <span class="bg-black text-white text-[10px] font-bold px-1.5 py-0.5 rounded">${r.roll}</span>
+                </div>
+                <p class="text-xs text-slate-700"><strong>Class:</strong> ${r.class} (${r.grade})</p>
+                <p class="text-xs text-slate-700"><strong>Dorm:</strong> ${r.dorm}</p>
+                <p class="text-xs text-slate-700"><strong>Age/DOB:</strong> ${r.dob}</p>
+                <div class="flex justify-between items-center pt-2 border-t border-gray-200">
+                  <label class="text-xs font-bold flex items-center gap-1">
+                    <input type="checkbox" ${r.checkedIn ? 'checked' : ''} onchange="toggleCheckIn(${r.id})" class="w-4 h-4"> Attended
+                  </label>
+                  ${isStaff ? `<button onclick="deleteRegistration(${r.id})" class="text-red-600 font-bold text-xs hover:underline">Delete</button>` : ''}
+                </div>
+              </div>
+            `).join('') + `</div>`;
+        }
+
+        section.innerHTML = `
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b-2 border-black pb-3 bg-yellow-200/70 p-3 neo-card-sm">
+            <div>
+              <span class="bg-black text-lime-400 text-[10px] font-black px-2 py-0.5 rounded uppercase">${comp.category}</span>
+              <h4 class="font-black text-lg text-black tracking-tight mt-1">🏆 ${comp.title}</h4>
+              <span class="text-xs font-bold text-slate-800">📍 ${comp.venue} • 📅 ${comp.date}</span>
+            </div>
+            <span class="text-xs font-black bg-black text-yellow-300 px-3 py-1 rounded-full border border-black">
+              ${compRegs.length} / ${comp.capacity} Registered
+            </span>
           </div>
-          <p class="text-xs text-slate-700"><strong>Class:</strong> ${r.class} (${r.grade})</p>
-          <p class="text-xs text-slate-700"><strong>Dorm:</strong> ${r.dorm}</p>
-          <p class="text-xs text-slate-700"><strong>Age/DOB:</strong> ${r.dob}</p>
-          <div class="flex justify-between items-center pt-2 border-t border-gray-300">
-            <label class="text-xs font-bold flex items-center gap-1">
-              <input type="checkbox" ${r.checkedIn ? 'checked' : ''} onchange="toggleCheckIn(${r.id})" class="w-4 h-4"> Attended
-            </label>
-            ${(currentUserRole === 'admin' || currentUserRole === 'prefect') ? `<button onclick="deleteRegistration(${r.id})" class="text-red-600 font-bold text-xs">Delete</button>` : ''}
-          </div>
+          ${boardersHtml}
         `;
-        container.appendChild(widget);
+
+        container.appendChild(section);
       });
     }
 
@@ -859,8 +1049,105 @@
     }
 
     function deleteRegistration(id) {
+      const reg = registrations.find(r => r.id === id);
+      if (reg) {
+        const comp = competitions.find(c => c.id === reg.compId);
+        if (comp && comp.enrolled > 0) comp.enrolled -= 1;
+      }
       registrations = registrations.filter(r => r.id !== id);
+      renderCompetitions();
       renderMasterRoster();
+    }
+
+    // PDF EXPORT FUNCTION (GROUPED BY COMPETITION)
+    function exportRosterPDF() {
+      const filterCompVal = document.getElementById('roster-filter-comp')?.value || 'ALL';
+      const printWindow = window.open('', '_blank');
+      
+      let html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>GSIS Winter House - Master Roster PDF</title>
+          <style>
+            body { font-family: system-ui, -apple-system, sans-serif; padding: 25px; color: #000; }
+            .header { border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+            h1 { font-size: 24px; text-transform: uppercase; margin: 0; }
+            .meta { font-size: 12px; font-weight: bold; color: #444; margin-top: 4px; }
+            .comp-section { border: 2px solid #000; margin-bottom: 25px; page-break-inside: avoid; }
+            .comp-title { bg-color: #f0f0f0; background: #eee; padding: 10px; font-size: 14px; font-weight: bold; border-bottom: 2px solid #000; display: flex; justify-content: space-between; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #000; padding: 8px 10px; text-align: left; font-size: 11px; }
+            th { background-color: #e2e8f0; font-weight: bold; text-transform: uppercase; }
+            tr:nth-child(even) { background-color: #f8fafc; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>GSIS WINTER HOUSE — COMPETITION MASTER ROSTER</h1>
+            <div class="meta">Official House Report • Generated: ${new Date().toLocaleString()}</div>
+          </div>
+      `;
+
+      competitions.forEach(comp => {
+        if (filterCompVal !== 'ALL' && comp.id != filterCompVal) return;
+        const compRegs = registrations.filter(r => r.compId === comp.id);
+
+        html += `
+          <div class="comp-section">
+            <div class="comp-title">
+              <span>🏆 ${comp.title} (${comp.category}) — Venue: ${comp.venue} [${comp.date}]</span>
+              <span>Enrolled: ${compRegs.length} / ${comp.capacity}</span>
+            </div>
+        `;
+
+        if (compRegs.length === 0) {
+          html += `<div style="padding: 10px; font-size: 11px; font-style: italic; color: #666;">No boarders registered for this competition yet.</div>`;
+        } else {
+          html += `
+            <table>
+              <thead>
+                <tr>
+                  <th>Roll #</th>
+                  <th>Student Name</th>
+                  <th>Grade & Class</th>
+                  <th>Dorm Room</th>
+                  <th>DOB / Age</th>
+                  <th>Attendance</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${compRegs.map(r => `
+                  <tr>
+                    <td><strong>${r.roll}</strong></td>
+                    <td>${r.name}</td>
+                    <td>${r.class} (${r.grade})</td>
+                    <td>${r.dorm}</td>
+                    <td>${r.dob}</td>
+                    <td>${r.checkedIn ? '✓ Verified' : 'Pending'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+        }
+
+        html += `</div>`;
+      });
+
+      html += `
+          <script>
+            window.onload = function() {
+              window.print();
+              window.close();
+            }
+          <\/script>
+        </body>
+        </html>
+      `;
+
+      printWindow.document.write(html);
+      printWindow.document.close();
     }
 
     // Modal Controls
@@ -921,6 +1208,7 @@
       competitions.push(newComp);
       closeModal('modal-create-comp');
       renderCompetitions();
+      renderMasterRoster();
     }
 
     function submitPinMemo(e) {
@@ -945,20 +1233,32 @@
     }
 
     function copyRosterToClipboard() {
-      const text = registrations.map(r => `${r.roll} - ${r.name} (${r.dorm})`).join('\n');
+      let text = "GSIS WINTER HOUSE ROSTER\n\n";
+      competitions.forEach(c => {
+        const regs = registrations.filter(r => r.compId === c.id);
+        if (regs.length > 0) {
+          text += `=== ${c.title} (${c.category}) ===\n`;
+          regs.forEach(r => {
+            text += `${r.roll} - ${r.name} (${r.dorm})\n`;
+          });
+          text += "\n";
+        }
+      });
       navigator.clipboard.writeText(text);
-      alert('Roster names copied to clipboard!');
+      alert('Roster grouped by competition copied to clipboard!');
     }
 
     function exportRosterCSV() {
-      let csv = "Roll,Name,Grade,Class,Dorm,DOB,Attended\n";
+      let csv = "Competition,Roll,Name,Grade,Class,Dorm,DOB,Attended\n";
       registrations.forEach(r => {
-        csv += `"${r.roll}","${r.name}","${r.grade}","${r.class}","${r.dorm}","${r.dob}","${r.checkedIn}"\n`;
+        const comp = competitions.find(c => c.id === r.compId);
+        const compTitle = comp ? comp.title : 'General';
+        csv += `"${compTitle}","${r.roll}","${r.name}","${r.grade}","${r.class}","${r.dorm}","${r.dob}","${r.checkedIn}"\n`;
       });
       const blob = new Blob([csv], { type: 'text/csv' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'Winter_House_Roster.csv';
+      a.download = 'Winter_House_Master_Roster.csv';
       a.click();
     }
 
