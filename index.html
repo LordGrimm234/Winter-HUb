@@ -73,13 +73,13 @@
     }
   </style>
 
-  <!-- AUTH GUARD: REDIRECT IF NOT LOGGED IN -->
+  <!-- STRICT SYNCHRONOUS AUTH CHECK -->
   <script>
-    (function checkAuthGuard() {
-      const activeUser = localStorage.getItem('userEmail');
-      const activeRole = localStorage.getItem('userRole');
-      if (!activeUser || !activeRole) {
-        window.location.href = 'login.html';
+    (function enforceSessionGuard() {
+      const email = sessionStorage.getItem('userEmail');
+      const role = sessionStorage.getItem('userRole');
+      if (!email || !role) {
+        window.location.replace('login.html');
       }
     })();
   </script>
@@ -108,7 +108,7 @@
         <div class="neo-card-sm px-3.5 py-1.5 bg-slate-800 text-white flex items-center gap-3">
           <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full bg-green-500 border border-black"></span>
-            <span id="user-display-name" class="font-bold text-xs text-cyan-300">Loading...</span>
+            <span id="user-display-name" class="font-bold text-xs text-cyan-300">Authenticating...</span>
           </div>
           <span id="user-role-badge" class="bg-black text-yellow-300 text-[10px] font-black uppercase px-2 py-0.5 rounded border border-yellow-400/30">
             STUDENT
@@ -293,12 +293,10 @@
         </button>
       </div>
 
-      <!-- 4 Column Competition Widgets Grid -->
       <div id="competitions-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         <!-- Rendered dynamically -->
       </div>
 
-      <!-- Master Roster View Grouped By Competition (Admin & Prefect Only) -->
       <div id="master-roster-section" class="neo-card p-6 bg-white hidden space-y-6">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b-2 border-black pb-4">
           <div>
@@ -308,7 +306,6 @@
           <div class="flex flex-wrap items-center gap-2">
             <select id="roster-filter-comp" onchange="renderMasterRoster()" class="neo-input px-3 py-1.5 text-xs font-bold bg-white">
               <option value="ALL">All Competitions</option>
-              <!-- Dynamic options -->
             </select>
             <button onclick="exportRosterPDF()" class="neo-btn px-3.5 py-1.5 bg-red-500 text-white text-xs font-bold">📄 Export PDF</button>
             <button onclick="copyRosterToClipboard()" class="neo-btn px-3 py-1.5 bg-yellow-300 text-black text-xs">Copy Names</button>
@@ -316,7 +313,6 @@
           </div>
         </div>
 
-        <!-- Rendered Competition Sections -->
         <div id="roster-widgets-container" class="space-y-6">
           <!-- Rendered via JS -->
         </div>
@@ -574,9 +570,9 @@
       supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
 
-    // Authenticated User State
-    const currentUserEmail = localStorage.getItem('userEmail') || 'user@gsis.ac.in';
-    const currentUserRole = localStorage.getItem('userRole') || 'student';
+    // Authenticated Session Verification
+    const currentUserEmail = sessionStorage.getItem('userEmail');
+    const currentUserRole = sessionStorage.getItem('userRole') || 'student';
 
     let activePracticeActive = false;
     let currentChannel = 'main-announcements';
@@ -632,9 +628,19 @@
     };
     let userCreatedChannels = [];
 
-    // App Initialization
-    window.onload = () => {
-      document.getElementById('user-display-name').innerText = currentUserEmail.split('@')[0];
+    // Async App Initialization & Server Session Verification
+    window.onload = async () => {
+      if (supabaseClient) {
+        const { data: { user }, error } = await supabaseClient.auth.getUser();
+        if (error || !user) {
+          sessionStorage.clear();
+          localStorage.clear();
+          window.location.replace('login.html');
+          return;
+        }
+      }
+
+      document.getElementById('user-display-name').innerText = currentUserEmail ? currentUserEmail.split('@')[0] : 'User';
       document.getElementById('user-role-badge').innerText = currentUserRole.toUpperCase();
       
       fetchOotyWeather();
@@ -648,10 +654,13 @@
       updateRoleUI();
     };
 
-    function handleLogout() {
-      localStorage.removeItem('userEmail');
-      localStorage.removeItem('userRole');
-      window.location.href = 'login.html';
+    async function handleLogout() {
+      if (supabaseClient) {
+        await supabaseClient.auth.signOut();
+      }
+      sessionStorage.clear();
+      localStorage.clear();
+      window.location.replace('login.html');
     }
 
     function updateRoleUI() {
@@ -1370,7 +1379,7 @@
       `).join('');
     }
 
-    // REAL-TIME CHAT IMPLEMENTATION (SUPABASE + LOCAL FALLBACK)
+    // REAL-TIME CHAT IMPLEMENTATION (SUPABASE + SESSION STATE)
     async function handleSendChatMessage(e) {
       e.preventDefault();
       const input = document.getElementById('chat-input-text');
@@ -1382,7 +1391,7 @@
           .from('chat_messages')
           .insert({
             channel_key: currentChannel,
-            sender_name: currentUserEmail.split('@')[0],
+            sender_name: currentUserEmail ? currentUserEmail.split('@')[0] : 'User',
             message_text: text,
             is_official: (currentUserRole !== 'student')
           });
@@ -1391,7 +1400,7 @@
       } else {
         if (!chatMessages[currentChannel]) chatMessages[currentChannel] = [];
         chatMessages[currentChannel].push({
-          sender: currentUserEmail.split('@')[0],
+          sender: currentUserEmail ? currentUserEmail.split('@')[0] : 'User',
           text: text,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           isOfficial: (currentUserRole !== 'student')
