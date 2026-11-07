@@ -503,6 +503,14 @@
 
   <!-- SCRIPT LOGIC -->
   <script>
+    // ========================================================
+    // SUPABASE CONFIGURATION
+    // ========================================================
+    const SUPABASE_URL = 'https://mevdpglvjbpxbmdqylmn.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ldmRwZ2x2amJweGJtZHF5bG1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQwNDYyNDQsImV4cCI6MjEwOTYyMjI0NH0.rGvGhxInn8ql1FM6yX5NMRLw3ozQqN5_GTAfkDeS3OQ';
+    // Initialize the Supabase Client
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
     // Global State
     let currentUserRole = 'admin'; // 'admin', 'prefect', 'student'
     let activePracticeActive = false;
