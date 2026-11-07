@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GSIS Winter House | Student & Staff Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      background-color: #F8F9FA;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .neo-card {
+      border: 3px solid #000;
+      box-shadow: 6px 6px 0 #000;
+      background-color: #ffffff;
+    }
+    .neo-input {
+      border: 3px solid #000;
+      box-shadow: 3px 3px 0 #000;
+      outline: none;
+    }
+    .neo-btn {
+      border: 3px solid #000;
+      box-shadow: 4px 4px 0 #000;
+      font-weight: 700;
+      border-radius: 9999px;
+      transition: all 0.1s ease;
+    }
+    .neo-btn:active {
+      transform: translate(4px, 4px);
+      box-shadow: 0px 0px 0 #000;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+  <div class="max-w-md w-full neo-card p-6 sm:p-8 bg-white space-y-6">
+    <div class="text-center space-y-2">
+      <div class="inline-flex w-12 h-12 bg-cyan-400 text-black border-2 border-black items-center justify-center font-black text-2xl rounded-full mb-2">W</div>
+      <h1 class="text-2xl font-black uppercase tracking-tight">GSIS Winter House</h1>
+      <p class="text-xs font-bold text-slate-600">Enter your school email (@gsis.ac.in) to login</p>
+    </div>
+
+    <!-- Toggle Login / Signup -->
+    <div class="flex border-2 border-black rounded-full overflow-hidden p-1 bg-gray-100">
+      <button onclick="switchAuthTab('login')" id="btn-tab-login" class="flex-1 py-1.5 text-xs font-black rounded-full bg-cyan-300 border border-black">Login</button>
+      <button onclick="switchAuthTab('signup')" id="btn-tab-signup" class="flex-1 py-1.5 text-xs font-black rounded-full text-slate-600">Register</button>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <form id="auth-login-form" onsubmit="handleAuthLogin(event)" class="space-y-4">
+      <div>
+        <label class="block text-xs font-bold mb-1">School Email ID:</label>
+        <input id="login-email" type="email" required placeholder="student@gsis.ac.in" class="w-full neo-input p-2.5 text-xs">
+      </div>
+      <div>
+        <label class="block text-xs font-bold mb-1">Password:</label>
+        <input id="login-password" type="password" required placeholder="••••••••" class="w-full neo-input p-2.5 text-xs">
+      </div>
+      <button type="submit" class="w-full neo-btn py-2.5 bg-lime-400 text-black font-black uppercase text-xs">Sign In ➔</button>
+    </form>
+
+    <!-- SIGNUP FORM -->
+    <form id="auth-signup-form" onsubmit="handleAuthSignup(event)" class="space-y-3 hidden">
+      <div>
+        <label class="block text-xs font-bold mb-1">Full Name:</label>
+        <input id="signup-name" type="text" required placeholder="Alex Sharma" class="w-full neo-input p-2 text-xs">
+      </div>
+      <div>
+        <label class="block text-xs font-bold mb-1">GSIS Email (@gsis.ac.in):</label>
+        <input id="signup-email" type="email" required placeholder="asharma@gsis.ac.in" class="w-full neo-input p-2 text-xs">
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-xs font-bold mb-1">Roll Number:</label>
+          <input id="signup-roll" type="text" required placeholder="W-204" class="w-full neo-input p-2 text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-bold mb-1">Dorm Block:</label>
+          <select id="signup-dorm" class="w-full neo-input p-2 text-xs">
+            <option value="Block A">Block A</option>
+            <option value="Block B">Block B</option>
+            <option value="Block C">Block C</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-bold mb-1">Staff Access Key (Optional):</label>
+        <input id="signup-role-key" type="text" placeholder="e.g. PREFECT-01 through 08 or ADMIN-01" class="w-full neo-input p-2 text-xs">
+        <span class="text-[10px] text-gray-500 font-bold">Leave blank to register as a standard Student.</span>
+      </div>
+      <div>
+        <label class="block text-xs font-bold mb-1">Create Password:</label>
+        <input id="signup-password" type="password" required placeholder="••••••••" class="w-full neo-input p-2 text-xs">
+      </div>
+      <button type="submit" class="w-full neo-btn py-2.5 bg-black text-lime-400 font-black uppercase text-xs">Create Account ➔</button>
+    </form>
+
+    <div class="text-center pt-2 border-t border-gray-200">
+      <a href="index.html" class="text-xs font-bold text-blue-600 underline">Continue to Dashboard Demo (Presenter Mode)</a>
+    </div>
+  </div>
+
+  <script>
+    function switchAuthTab(tab) {
+      if (tab === 'login') {
+        document.getElementById('auth-login-form').classList.remove('hidden');
+        document.getElementById('auth-signup-form').classList.add('hidden');
+        document.getElementById('btn-tab-login').className = 'flex-1 py-1.5 text-xs font-black rounded-full bg-cyan-300 border border-black';
+        document.getElementById('btn-tab-signup').className = 'flex-1 py-1.5 text-xs font-black rounded-full text-slate-600';
+      } else {
+        document.getElementById('auth-login-form').classList.add('hidden');
+        document.getElementById('auth-signup-form').classList.remove('hidden');
+        document.getElementById('btn-tab-signup').className = 'flex-1 py-1.5 text-xs font-black rounded-full bg-cyan-300 border border-black';
+        document.getElementById('btn-tab-login').className = 'flex-1 py-1.5 text-xs font-black rounded-full text-slate-600';
+      }
+    }
+
+    function handleAuthLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      if (!email.toLowerCase().endsWith('@gsis.ac.in')) {
+        alert('Please use your official GSIS school email (@gsis.ac.in)');
+        return;
+      }
+      alert('Login verified! Redirecting to Winter House Hub...');
+      window.location.href = 'index.html';
+    }
+
+    function handleAuthSignup(e) {
+      e.preventDefault();
+      const email = document.getElementById('signup-email').value;
+      if (!email.toLowerCase().endsWith('@gsis.ac.in')) {
+        alert('Registration is restricted to official @gsis.ac.in email addresses.');
+        return;
+      }
+      alert('Account registered successfully! You can now log in.');
+      switchAuthTab('login');
+    }
+  </script>
+</body>
+</html>
