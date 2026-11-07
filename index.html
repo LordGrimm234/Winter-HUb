@@ -72,6 +72,17 @@
       background-size: 1rem 1rem;
     }
   </style>
+
+  <!-- MANDATORY AUTH GUARD: REDIRECT IF NOT LOGGED IN -->
+  <script>
+    (function checkAuthGuard() {
+      const activeUser = localStorage.getItem('userEmail');
+      const activeRole = localStorage.getItem('userRole');
+      if (!activeUser || !activeRole) {
+        window.location.href = 'login.html';
+      }
+    })();
+  </script>
 </head>
 <body class="min-h-screen flex flex-col pb-12">
 
@@ -93,18 +104,16 @@
           WINTER IS COMING
         </span>
         
-        <!-- User Profile & Quick Role Switcher -->
-        <div class="neo-card-sm px-3 py-1.5 bg-slate-800 text-white flex items-center gap-3">
-          <div class="flex items-center gap-1.5">
+        <!-- Authenticated User Profile & Fixed Role Badge -->
+        <div class="neo-card-sm px-3.5 py-1.5 bg-slate-800 text-white flex items-center gap-3">
+          <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full bg-green-500 border border-black"></span>
-            <span id="user-display-name" class="font-bold text-xs text-cyan-300">Master.R</span>
+            <span id="user-display-name" class="font-bold text-xs text-cyan-300">Loading...</span>
           </div>
-          <select id="header-role-select" onchange="changeActiveRole(this.value)" class="bg-black text-white text-[11px] font-bold border border-slate-600 rounded px-1.5 py-0.5">
-            <option value="admin">Role: Admin</option>
-            <option value="prefect">Role: Prefect</option>
-            <option value="student">Role: Student</option>
-          </select>
-          <a href="login.html" class="text-[11px] font-bold text-red-400 underline hover:text-red-300">Logout</a>
+          <span id="user-role-badge" class="bg-black text-yellow-300 text-[10px] font-black uppercase px-2 py-0.5 rounded border border-yellow-400/30">
+            STUDENT
+          </span>
+          <button onclick="handleLogout()" class="text-xs font-bold text-red-400 underline hover:text-red-300 ml-1">Logout</button>
         </div>
       </div>
     </div>
@@ -266,14 +275,14 @@
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 neo-card p-4 bg-cyan-100">
         <div>
           <h2 class="text-2xl font-black uppercase">Competition Roster</h2>
-          <p class="text-xs font-bold text-slate-700">Select any competition card below to register or view participant lists.</p>
+          <p class="text-xs font-bold text-slate-700">Select any competition card below to register or view details.</p>
         </div>
         <button id="admin-create-comp-btn" onclick="openCreateCompModal()" class="neo-btn px-4 py-2 bg-black text-lime-400 text-xs font-bold uppercase hidden">
           + Create Competition (Admin/Prefect)
         </button>
       </div>
 
-      <!-- 3-4 Column Competition Widgets Grid -->
+      <!-- 4 Column Competition Widgets Grid -->
       <div id="competitions-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         <!-- Rendered dynamically via JS -->
       </div>
@@ -323,11 +332,11 @@
     <section id="page-chat" class="hidden">
       <div class="neo-card bg-slate-900 text-white overflow-hidden grid grid-cols-1 md:grid-cols-3 min-h-[550px]">
         
-        <!-- Left Sidebar: Main Broadcast + Student Created Chats + Staff Tracker -->
+        <!-- Left Sidebar -->
         <div class="border-b-4 md:border-b-0 md:border-r-4 border-black p-4 bg-slate-800 flex flex-col justify-between space-y-4">
           <div class="space-y-4">
             
-            <!-- Default Pre-Created Main Channel -->
+            <!-- Default Channel -->
             <div>
               <span class="text-[10px] font-black uppercase text-slate-400 block mb-2">OFFICIAL HOUSE CHANNEL</span>
               <button onclick="selectChannel('main-announcements')" id="chan-main-announcements" class="w-full neo-card-sm p-3 text-left font-bold text-xs bg-cyan-300 text-black flex justify-between items-center">
@@ -347,7 +356,7 @@
               </div>
             </div>
 
-            <!-- Staff Monitored Section (Visible only to Prefects & Admin) -->
+            <!-- Staff Monitored Section -->
             <div id="staff-chat-tracker" class="hidden border-t-2 border-yellow-400/40 pt-3">
               <div class="flex items-center gap-1.5 mb-2">
                 <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
@@ -522,13 +531,18 @@
 
   <!-- SCRIPT LOGIC -->
   <script>
-    // Supabase Config Placeholder (Insert actual URL & Key if live)
+    // Supabase Credentials Block
     const SUPABASE_URL = 'https://mevdpglvjbpxbmdqylmn.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ldmRwZ2x2amJweGJtZHF5bG1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQwNDYyNDQsImV4cCI6MjEwOTYyMjI0NH0.rGvGhxInn8ql1FM6yX5NMRLw3ozQqN5_GTAfkDeS3OQ';
     let supabaseClient = null;
+    if (typeof supabase !== 'undefined' && SUPABASE_URL !== 'https://YOUR-PROJECT-ID.supabase.co') {
+      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
 
-    // Load active role from localStorage or default to admin
-    let currentUserRole = localStorage.getItem('userRole') || 'admin';
+    // Authenticated State from local session
+    const currentUserEmail = localStorage.getItem('userEmail') || 'user@gsis.ac.in';
+    const currentUserRole = localStorage.getItem('userRole') || 'student';
+
     let activePracticeActive = false;
     let currentChannel = 'main-announcements';
 
@@ -545,7 +559,7 @@
       { id: 4, title: 'Cultural Music & Talent Night', category: 'Cultural', venue: 'Open Amphitheatre', date: 'Nov 20, 2026', capacity: 25, enrolled: 19 }
     ];
 
-    // Registrations Data (Cleaned of Blocks)
+    // Registrations Data
     let registrations = [
       { id: 101, compId: 1, roll: 'W-104', name: 'Rohan Verma', grade: 'Grade 11', class: '11-A IB', dorm: 'Room 104', dob: '16 (12/03/2010)', checkedIn: true },
       { id: 102, compId: 1, roll: 'W-208', name: 'Karan Patel', grade: 'Grade 12', class: '12-B ISC', dorm: 'Room 208', dob: '17 (05/08/2009)', checkedIn: false },
@@ -570,8 +584,8 @@
 
     // App Initialization
     window.onload = () => {
-      document.getElementById('header-role-select').value = currentUserRole;
-      document.getElementById('user-display-name').innerText = `User: ${currentUserRole.toUpperCase()}`;
+      document.getElementById('user-display-name').innerText = currentUserEmail.split('@')[0];
+      document.getElementById('user-role-badge').innerText = currentUserRole.toUpperCase();
       
       fetchOotyWeather();
       fetchQuizFromAPI();
@@ -582,11 +596,10 @@
       updateRoleUI();
     };
 
-    function changeActiveRole(role) {
-      currentUserRole = role;
-      localStorage.setItem('userRole', role);
-      document.getElementById('user-display-name').innerText = `User: ${role.toUpperCase()}`;
-      updateRoleUI();
+    function handleLogout() {
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('userRole');
+      window.location.href = 'login.html';
     }
 
     function updateRoleUI() {
@@ -850,7 +863,7 @@
       renderMasterRoster();
     }
 
-    // Modal Control
+    // Modal Controls
     function openRegisterModal(id, title) {
       document.getElementById('reg-comp-id').value = id;
       document.getElementById('reg-modal-title').innerText = `Register: ${title}`;
@@ -931,7 +944,6 @@
       }
     }
 
-    // Clipboard & CSV Export
     function copyRosterToClipboard() {
       const text = registrations.map(r => `${r.roll} - ${r.name} (${r.dorm})`).join('\n');
       navigator.clipboard.writeText(text);
@@ -950,7 +962,6 @@
       a.click();
     }
 
-    // Render Corkboard Stickies
     function renderAnnouncements() {
       const container = document.getElementById('corkboard-grid');
       const isStaff = (currentUserRole === 'admin' || currentUserRole === 'prefect');
@@ -969,7 +980,6 @@
       `).join('');
     }
 
-    // Chat Functions
     function promptCreateChannel() {
       const name = prompt('Enter name for your custom group chat or username:');
       if (name && name.trim()) {
