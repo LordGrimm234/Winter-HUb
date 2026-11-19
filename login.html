@@ -121,7 +121,7 @@
 
     async function handleAuthLogin(e) {
       e.preventDefault();
-      const email = document.getElementById('login-email').value;
+      const email = document.getElementById('login-email').value.trim();
       const password = document.getElementById('login-password').value;
 
       if (!email.toLowerCase().endsWith('@gsis.ac.in')) {
@@ -147,32 +147,36 @@
           .single();
 
         const role = profile ? profile.role : 'student';
-        localStorage.setItem('userRole', role);
-        localStorage.setItem('userEmail', email);
+        sessionStorage.setItem('userRole', role);
+        sessionStorage.setItem('userEmail', email);
       } else {
         let role = 'student';
         if (email.includes('admin') || email.includes('master')) role = 'admin';
         else if (email.includes('prefect')) role = 'prefect';
         
-        localStorage.setItem('userRole', role);
-        localStorage.setItem('userEmail', email);
+        sessionStorage.setItem('userRole', role);
+        sessionStorage.setItem('userEmail', email);
       }
 
-      alert('Login verified! Redirecting to Winter House Hub...');
-      window.location.href = 'index.html';
+      window.location.replace('index.html');
     }
 
     async function handleAuthSignup(e) {
       e.preventDefault();
-      const name = document.getElementById('signup-name').value;
-      const email = document.getElementById('signup-email').value;
-      const roll = document.getElementById('signup-roll').value;
-      const dorm = document.getElementById('signup-dorm').value;
+      const name = document.getElementById('signup-name').value.trim();
+      const email = document.getElementById('signup-email').value.trim();
+      const roll = document.getElementById('signup-roll').value.trim();
+      const dorm = document.getElementById('signup-dorm').value.trim();
       const key = document.getElementById('signup-role-key').value.trim().toUpperCase();
       const password = document.getElementById('signup-password').value;
 
       if (!email.toLowerCase().endsWith('@gsis.ac.in')) {
         alert('Registration is restricted to official @gsis.ac.in email addresses.');
+        return;
+      }
+
+      if (password.length < 6) {
+        alert('Password must be at least 6 characters long.');
         return;
       }
 
@@ -196,13 +200,8 @@
         }
       }
 
-      let role = 'student';
-      if (key === 'ADMIN-01') role = 'admin';
-      else if (key.startsWith('PREFECT-')) role = 'prefect';
-
-      localStorage.setItem('userRole', role);
-      localStorage.setItem('userEmail', email);
-      alert('Account registered successfully! You can now log in.');
+      alert('Account registered successfully! Please sign in with your email and password.');
+      document.getElementById('login-email').value = email;
       switchAuthTab('login');
     }
   </script>
