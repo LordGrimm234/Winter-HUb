@@ -565,6 +565,7 @@
     // Supabase Credentials Block
     const SUPABASE_URL = 'https://mevdpglvjbpxbmdqylmn.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ldmRwZ2x2amJweGJtZHF5bG1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQwNDYyNDQsImV4cCI6MjEwOTYyMjI0NH0.rGvGhxInn8ql1FM6yX5NMRLw3ozQqN5_GTAfkDeS3OQ';
+
     let supabaseClient = null;
     if (typeof supabase !== 'undefined' && SUPABASE_URL !== 'https://YOUR-PROJECT-ID.supabase.co') {
       supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -648,6 +649,7 @@
       renderPracticeEventsDropdown();
       renderCompetitions();
       renderAnnouncements();
+      await loadChatHistory();
       renderChatSidebar();
       renderChatMessages();
       subscribeToRealtimeChat();
@@ -1084,7 +1086,7 @@
             h1 { font-size: 24px; text-transform: uppercase; margin: 0; }
             .meta { font-size: 12px; font-weight: bold; color: #444; margin-top: 4px; }
             .comp-section { border: 2px solid #000; margin-bottom: 25px; page-break-inside: avoid; }
-            .comp-title { background: #eee; padding: 10px; font-size: 14px; font-weight: bold; border-bottom: 2px solid #000; display: flex; justify-between; }
+            .comp-title { background: #eee; padding: 10px; font-size: 14px; font-weight: bold; border-bottom: 2px solid #000; display: flex; justify-content: space-between; }
             table { width: 100%; border-collapse: collapse; }
             th, td { border: 1px solid #000; padding: 8px 10px; text-align: left; font-size: 11px; }
             th { background-color: #e2e8f0; font-weight: bold; text-transform: uppercase; }
@@ -1380,6 +1382,36 @@
     }
 
     // REAL-TIME CHAT IMPLEMENTATION (SUPABASE + SESSION STATE)
+    async function loadChatHistory() {
+      if (!supabaseClient) return;
+      const { data, error } = await supabaseClient
+        .from('chat_messages')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (!error && data && data.length > 0) {
+        chatMessages = { 'main-announcements': [] };
+        data.forEach(msg => {
+          if (!chatMessages[msg.channel_key]) {
+            chatMessages[msg.channel_key] = [];
+          }
+          chatMessages[msg.channel_key].push({
+            sender: msg.sender_name,
+            text: msg.message_text,
+            time: new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isOfficial: msg.is_official
+          });
+          if (msg.channel_key !== 'main-announcements' && !userCreatedChannels.some(c => c.key === msg.channel_key)) {
+            userCreatedChannels.push({
+              key: msg.channel_key,
+              title: msg.channel_key,
+              createdBy: msg.sender_name
+            });
+          }
+        });
+      }
+    }
+
     async function handleSendChatMessage(e) {
       e.preventDefault();
       const input = document.getElementById('chat-input-text');
@@ -1432,6 +1464,15 @@
               time: new Date(newMessage.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
               isOfficial: newMessage.is_official
             });
+
+            if (newMessage.channel_key !== 'main-announcements' && !userCreatedChannels.some(c => c.key === newMessage.channel_key)) {
+              userCreatedChannels.push({
+                key: newMessage.channel_key,
+                title: newMessage.channel_key,
+                createdBy: newMessage.sender_name
+              });
+              renderChatSidebar();
+            }
 
             if (currentChannel === newMessage.channel_key) {
               renderChatMessages();
